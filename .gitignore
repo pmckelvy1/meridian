@@ -187,3 +187,7 @@ browser-worker
 .dev.vars
 
 apps/scrapers/feeds.json
+
+__pycache__
+
+apps/briefs
