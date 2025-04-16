@@ -8,12 +8,44 @@
     "enabled": true,
     "head_sampling_rate": 1, // optional. default = 1.
   },
-  "workflows": [
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "SOURCE_SCRAPER", // Matches the binding name in Env
+        "class_name": "SourceScraperDO", // Matches the exported class name
+      },
+    ],
+  },
+  // *** Add Migrations for the Durable Object class ***
+  "migrations": [
     {
-      "name": "meridian_scrape_rss_feed",
-      "binding": "SCRAPE_RSS_FEED",
-      "class_name": "ScrapeRssFeed",
+      "tag": "v1", // Use a meaningful tag
+      "new_classes": ["SourceScraperDO"],
     },
+  ],
+  "queues": {
+    "producers": [
+      // Add producer binding here if the main worker also needs to send
+      // Note: The SourceScraperDO will need this binding configured in its own section if defined separately,
+      // or passed via the environment if instantiated dynamically. For now, we focus on the consumer.
+      {
+        "queue": "article-processing-queue", // Name of the queue
+        "binding": "ARTICLE_PROCESSING_QUEUE",
+      },
+    ],
+    "consumers": [
+      {
+        "queue": "article-processing-queue", // Must match the queue name
+        // Optional consumer settings:
+        "max_batch_size": 100, // Process up to 100 articles per batch
+        "max_batch_timeout": 30, // Wait up to 30s to fill a batch
+        "max_retries": 5, // Retry failed batches up to 5 times
+        "dead_letter_queue": "article-processing-dlq", // DLQ for permanently failed batches
+        // "retry_delay": 60 // Optional: Delay between retries in seconds
+      },
+    ],
+  },
+  "workflows": [
     {
       "name": "meridian_process_articles",
       "binding": "PROCESS_ARTICLES",
@@ -22,12 +54,6 @@
   ],
   "vars": {
     "CORS_ORIGIN": "http://127.0.0.1:3000",
-  },
-  "triggers": {
-    // Schedule cron triggers:
-    // - Every hour (at minute 4)
-    // - At 07:08 (UTC) every day (Note: Original TOML only had one cron)
-    "crons": ["4 * * * *"],
   },
   "env": {
     "production": {

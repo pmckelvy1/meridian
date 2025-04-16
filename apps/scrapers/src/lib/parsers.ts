@@ -11,7 +11,7 @@ const rssFeedSchema = z.object({
   pubDate: z.date().nullable(),
 });
 
-export async function parseRSSFeed(xml: string) {
+export async function parseRSSFeed(xml: string): Promise<Result<z.infer<typeof rssFeedSchema>[], Error>> {
   const safeParser = Result.fromThrowable(
     (xml: string) => new XMLParser({ ignoreAttributes: false, attributeNamePrefix: '@_' }).parse(xml),
     e => (e instanceof Error ? e : new Error(String(e)))
@@ -19,7 +19,7 @@ export async function parseRSSFeed(xml: string) {
 
   const parsedXml = safeParser(xml);
   if (parsedXml.isErr()) {
-    return err({ type: 'PARSE_ERROR', error: parsedXml.error });
+    return err(new Error(`Parse error: ${parsedXml.error.message}`));
   }
 
   const result = parsedXml.value;
@@ -89,7 +89,7 @@ export async function parseRSSFeed(xml: string) {
   // standardize the items
   const parsedItems = z.array(rssFeedSchema).safeParse(properItems);
   if (parsedItems.success === false) {
-    return err({ type: 'VALIDATION_ERROR', error: parsedItems.error });
+    return err(new Error(`Validation error: ${parsedItems.error.message}`));
   }
 
   return ok(parsedItems.data);

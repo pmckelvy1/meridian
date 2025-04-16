@@ -1,10 +1,22 @@
 import { sql } from 'drizzle-orm';
-import { boolean, integer, jsonb, pgTable, serial, text, timestamp } from 'drizzle-orm/pg-core';
+import { boolean, integer, jsonb, pgTable, serial, text, timestamp, pgEnum } from 'drizzle-orm/pg-core';
 
 /**
  * Note: We use $ to denote the table objects
  * This frees up the uses of sources, articles, reports, etc as variables in the codebase
  **/
+
+const articleCompletenessEnum = pgEnum('completeness', ['COMPLETE', 'PARTIAL_USEFUL', 'PARTIAL_USELESS']);
+const articleContentQualityEnum = pgEnum('content_quality', ['OK', 'LOW_QUALITY', 'JUNK']);
+const articleStatusEnum = pgEnum('status', [
+  'PENDING_FETCH',
+  'CONTENT_FETCHED',
+  'PROCESSING',
+  'PROCESSED',
+  'FETCH_FAILED',
+  'RENDER_FAILED',
+  'PROCESS_FAILED',
+]);
 
 export const $sources = pgTable('sources', {
   id: serial('id').primaryKey(),
@@ -22,13 +34,20 @@ export const $articles = pgTable('articles', {
   title: text('title').notNull(),
   url: text('url').notNull().unique(),
   publishDate: timestamp('publish_date', { mode: 'date' }),
+  status: articleStatusEnum().default('PENDING_FETCH'),
 
   content: text('content'),
+
   language: text('language'),
-  location: text('location'),
-  completeness: text('completeness'),
-  relevance: text('relevance'),
-  summary: text('summary'),
+  primary_location: text('primary_location'),
+  completeness: articleCompletenessEnum(),
+  content_quality: articleContentQualityEnum(),
+  event_summary_points: jsonb('event_summary_points'),
+  thematic_keywords: jsonb('thematic_keywords'),
+  topic_tags: jsonb('topic_tags'),
+  key_entities: jsonb('key_entities'),
+  content_focus: jsonb('content_focus'),
+
   failReason: text('fail_reason'),
 
   sourceId: integer('source_id')

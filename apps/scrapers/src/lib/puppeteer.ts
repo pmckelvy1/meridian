@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { parseArticle } from './parsers';
 import { err, ok } from 'neverthrow';
-import { safeFetch } from './utils';
+import { safeFetch, userAgents } from './utils';
 import { Env } from '../index';
 
 export const articleSchema = z.object({
@@ -10,28 +10,9 @@ export const articleSchema = z.object({
   result: z.string(),
 });
 
-const userAgents = [
-  // ios (golden standard for publishers)
-  'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1', // iphone safari (best overall)
-  'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/123.0.6312.87 Mobile/15E148 Safari/604.1', // iphone chrome
-
-  // android (good alternatives)
-  'Mozilla/5.0 (Linux; Android 14; SM-S908B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Mobile Safari/537.36', // samsung flagship
-  'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Mobile Safari/537.36', // pixel
-];
-
-const referrers = [
-  'https://www.google.com/',
-  'https://www.bing.com/search?q=relevant+search+term',
-  'https://www.reddit.com/r/relevant_subreddit',
-  'https://t.co/shortened_url', // looks like twitter
-  'https://www.linkedin.com/feed/',
-];
-
 export async function getArticleWithBrowser(env: Env, url: string) {
   const response = await safeFetch(
     `https://api.cloudflare.com/client/v4/accounts/${env.CLOUDFLARE_ACCOUNT_ID}/browser-rendering/content`,
-    'json',
     {
       method: 'POST',
       headers: {
@@ -57,7 +38,7 @@ export async function getArticleWithBrowser(env: Env, url: string) {
         gotoOptions: {
           waitUntil: 'networkidle0',
           timeout: 30000,
-          referer: referrers[Math.floor(Math.random() * referrers.length)],
+          referer: 'https://www.google.com/',
         },
         viewport: {
           width: 390,
@@ -119,7 +100,7 @@ export async function getArticleWithBrowser(env: Env, url: string) {
     return err({ type: 'FETCH_ERROR', error: response.error });
   }
 
-  const parsedPageContent = articleSchema.safeParse(response.value);
+  const parsedPageContent = articleSchema.safeParse(await response.value.json());
   if (parsedPageContent.success === false) {
     return err({ type: 'VALIDATION_ERROR', error: parsedPageContent.error });
   }
@@ -133,40 +114,21 @@ export async function getArticleWithBrowser(env: Env, url: string) {
 }
 
 export async function getArticleWithFetch(url: string) {
-  const response = await safeFetch(url, 'text', {
+  const response = await safeFetch(url, {
     method: 'GET',
     headers: {
       'User-Agent': userAgents[Math.floor(Math.random() * userAgents.length)],
-      Referer: referrers[Math.floor(Math.random() * referrers.length)],
+      Referer: 'https://www.google.com/',
     },
   });
   if (response.isErr()) {
     return err({ type: 'FETCH_ERROR', error: response.error });
-  } else if (typeof response.value !== 'string') {
-    return err({ type: 'FETCH_ERROR', error: new Error('Response is not a string') });
   }
 
-  const articleResult = parseArticle({ html: response.value });
+  const articleResult = parseArticle({ html: await response.value.text() });
   if (articleResult.isErr()) {
     return err({ type: 'PARSE_ERROR', error: articleResult.error });
   }
 
   return ok(articleResult.value);
-}
-
-export async function getRssFeedWithFetch(url: string) {
-  const response = await safeFetch(url, 'text', {
-    method: 'GET',
-    headers: {
-      'User-Agent': userAgents[Math.floor(Math.random() * userAgents.length)],
-      Referer: referrers[Math.floor(Math.random() * referrers.length)],
-    },
-  });
-  if (response.isErr()) {
-    return err({ type: 'FETCH_ERROR', error: response.error });
-  } else if (typeof response.value !== 'string') {
-    return err({ type: 'FETCH_ERROR', error: new Error('Response is not a string') });
-  }
-
-  return ok(response.value);
 }

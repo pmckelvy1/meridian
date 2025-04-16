@@ -1,13 +1,11 @@
-import { $articles, $sources, and, gte, lte, isNotNull, eq, not } from '@meridian/database';
+import openGraph from './routers/openGraph.router';
+import reportsRouter from './routers/reports.router';
+import sourcesRouter from './routers/sources.router';
+import { $articles, $sources, and, eq, gte, isNotNull, lte, not } from '@meridian/database';
 import { Env } from './index';
 import { getDb, hasValidAuthToken } from './lib/utils';
 import { Hono } from 'hono';
 import { trimTrailingSlash } from 'hono/trailing-slash';
-import openGraph from './routers/openGraph.router';
-import reportsRouter from './routers/reports.router';
-import { startRssFeedScraperWorkflow } from './workflows/rssFeed.workflow';
-import { getRssFeedWithFetch } from './lib/puppeteer';
-import { parseRSSFeed } from './lib/parsers';
 
 export type HonoEnv = { Bindings: Env };
 
@@ -15,6 +13,7 @@ const app = new Hono<HonoEnv>()
   .use(trimTrailingSlash())
   .get('/favicon.ico', async c => c.notFound()) // disable favicon
   .route('/reports', reportsRouter)
+  .route('/sources', sourcesRouter)
   .route('/openGraph', openGraph)
   .get('/ping', async c => c.json({ pong: true }))
   .get('/events', async c => {
@@ -86,19 +85,6 @@ const app = new Hono<HonoEnv>()
     };
 
     return c.json(response);
-  })
-  .get('/trigger-rss', async c => {
-    const token = c.req.query('token');
-    if (token !== c.env.MERIDIAN_SECRET_KEY) {
-      return c.json({ error: 'Unauthorized' }, 401);
-    }
-
-    const res = await startRssFeedScraperWorkflow(c.env, { force: true });
-    if (res.isErr()) {
-      return c.json({ error: res.error }, 500);
-    }
-
-    return c.json({ success: true });
   });
 
 export default app;

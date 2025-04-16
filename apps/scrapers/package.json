@@ -9,7 +9,7 @@
     "url": "https://iliane.xyz"
   },
   "scripts": {
-    "dev": "wrangler dev",
+    "dev": "wrangler dev --local",
     "test": "vitest",
     "cf-typegen": "wrangler types",
     "typecheck": "tsc --noEmit"
