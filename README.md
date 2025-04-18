@@ -106,4 +106,3 @@ MIT License - See [LICENSE](./LICENSE) file for details.
 
 _Built because we live in an age of magic, and we keep forgetting to use it._
 
-
