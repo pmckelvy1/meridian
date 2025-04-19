@@ -8,6 +8,7 @@ import reportsRouter from './routers/reports.router';
 import { startRssFeedScraperWorkflow } from './workflows/rssFeed.workflow';
 import { getRssFeedWithFetch } from './lib/puppeteer';
 import { parseRSSFeed } from './lib/parsers';
+import { startProcessArticleWorkflow } from './workflows/processArticles.workflow';
 
 export type HonoEnv = { Bindings: Env };
 
@@ -19,10 +20,10 @@ const app = new Hono<HonoEnv>()
   .get('/ping', async c => c.json({ pong: true }))
   .get('/events', async c => {
     // require bearer auth token
-    const hasValidToken = hasValidAuthToken(c);
-    if (!hasValidToken) {
-      return c.json({ error: 'Unauthorized' }, 401);
-    }
+    // const hasValidToken = hasValidAuthToken(c);
+    // if (!hasValidToken) {
+    //   return c.json({ error: 'Unauthorized' }, 401);
+    // }
 
     // Check if a date query parameter was provided in yyyy-mm-dd format
     const dateParam = c.req.query('date');
@@ -45,7 +46,7 @@ const app = new Hono<HonoEnv>()
 
     // Create a 30-hour window ending at 7am UTC on the specified date
     const startDate = new Date(endDate.getTime() - 30 * 60 * 60 * 1000);
-
+    console.log('db url', c.env.DATABASE_URL);
     const db = getDb(c.env.DATABASE_URL);
 
     const allSources = await db.select({ id: $sources.id, name: $sources.name }).from($sources);
@@ -94,6 +95,14 @@ const app = new Hono<HonoEnv>()
     }
 
     const res = await startRssFeedScraperWorkflow(c.env, { force: true });
+    if (res.isErr()) {
+      return c.json({ error: res.error }, 500);
+    }
+
+    return c.json({ success: true });
+  })
+  .get('test-process', async c => {
+    const res = await startProcessArticleWorkflow(c.env);
     if (res.isErr()) {
       return c.json({ error: res.error }, 500);
     }
