@@ -1,4 +1,4 @@
-import tailwindcss from '@tailwindcss/vite';
+import { defineNuxtConfig } from 'nuxt/config';
 
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
@@ -26,8 +26,11 @@ export default defineNuxtConfig({
   },
 
   css: ['~/assets/css/main.css'],
-  vite: {
-    plugins: [tailwindcss()],
+  postcss: {
+    plugins: {
+      tailwindcss: {},
+      autoprefixer: {},
+    },
   },
 
   runtimeConfig: {
@@ -44,6 +47,7 @@ export default defineNuxtConfig({
   srcDir: 'src',
 
   nitro: {
+    preset: 'node',
     prerender: {
       autoSubfolderIndex: false,
     },
