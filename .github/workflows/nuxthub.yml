@@ -46,4 +46,4 @@ jobs:
         id: deploy
         with:
           project-key: meridian-ncsk
-          working-directory: apps/frontend
+          directory: apps/frontend
