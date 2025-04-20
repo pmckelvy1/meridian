@@ -188,6 +188,7 @@ browser-worker
 
 apps/scrapers/feeds.json
 
+
 __pycache__
 
 apps/briefs
@@ -207,3 +208,6 @@ SETUP.MD
 TODO.MD
 
 apps/scrapers/.dev.vars.local
+
+apps/briefs/src/env
+
