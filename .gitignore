@@ -187,3 +187,5 @@ browser-worker
 .dev.vars
 
 apps/scrapers/feeds.json
+
+apps/scrapers/.dev.vars.local
