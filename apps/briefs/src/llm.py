@@ -5,9 +5,9 @@ from dotenv import load_dotenv
 load_dotenv()
 
 client = OpenAI(
-    # This is the default and can be omitted
     api_key=os.environ.get("GOOGLE_API_KEY"),
-    base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
+    base_url="https://generativelanguage.googleapis.com/v1beta/models/",
+    default_headers={"x-goog-api-key": os.environ.get("GOOGLE_API_KEY")}
 )
 
 

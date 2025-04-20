@@ -189,3 +189,4 @@ browser-worker
 apps/scrapers/feeds.json
 
 apps/scrapers/.dev.vars.local
+apps/briefs/src/env
