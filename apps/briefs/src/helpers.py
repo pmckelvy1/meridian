@@ -2,6 +2,9 @@ from typing import List, Dict, Any
 from pydantic import BaseModel, Field
 import json
 from retry import retry
+from json_repair import repair_json
+
+from llm import call_llm
 
 # Helper function for pooling embeddings
 def average_pool(last_hidden_states, attention_mask):
@@ -44,16 +47,16 @@ Adopt the persona of an exceptionally well-informed, highly analytical, and subt
 """
 
 @retry(tries=3, delay=2, backoff=2, jitter=2, max_delay=20)
-def process_story(cluster):
+def process_story(cluster, events):
     """Process a single story cluster"""
     story_articles_ids = cluster["articles_ids"]
     
     story_article_md = ""
     for article_id in story_articles_ids:
-        article = next((e for e in events if e.id == article_id), None)
+        article = next((e for e in events if e['id'] == article_id), None)
         if article is None:
             continue
-        story_article_md += f"- (#{article.id}) [{article.title}]({article.url})\n"
+        story_article_md += f"- (#{article['id']}) [{article['title']}]({article['url']})\n"
     story_article_md = story_article_md.strip()
 
     prompt = f"""
@@ -94,6 +97,7 @@ Return your final answer in JSON format:
     // collection_of_stories_start: if answer is "collection_of_stories", include the following fields:
     "stories": [
         {{
+            "id": 0, // unique identifier for the story
             "title": "title of the story",
             "importance": 1-10, // global significance scale
             "articles": [] // list of article ids in the story (**only** include substantial stories with **3+ articles**)
