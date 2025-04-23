@@ -17,6 +17,9 @@ import { SunIcon, MoonIcon } from '@heroicons/vue/20/solid';
             <li v-if="useUserSession().loggedIn.value">
               <NuxtLink class="hover:underline" active-class="underline" to="/admin"> admin </NuxtLink>
             </li>
+            <li>
+              <NuxtLink class="hover:underline" active-class="underline" to="/sources/new"> add source </NuxtLink>
+            </li>
           </div>
           <ClientOnly>
             <button
