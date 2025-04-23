@@ -14,6 +14,9 @@ import { SunIcon, MoonIcon } from '@heroicons/vue/20/solid';
             <li>
               <NuxtLink class="hover:underline" active-class="underline" to="/briefs"> briefs </NuxtLink>
             </li>
+            <li>
+              <NuxtLink class="hover:underline" active-class="underline" to="/sources/new"> add source </NuxtLink>
+            </li>
           </div>
           <ClientOnly>
             <button

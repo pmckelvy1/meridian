@@ -18,6 +18,30 @@ const app = new Hono<HonoEnv>()
   .route('/reports', reportsRouter)
   .route('/openGraph', openGraph)
   .get('/ping', async c => c.json({ pong: true }))
+  .post('/sources', async c => {
+    const db = getDb(c.env.DATABASE_URL);
+    const body = await c.req.json();
+
+    // Validate required fields
+    if (!body.name || !body.url || !body.category) {
+      return c.json({ error: 'Missing required fields' }, 400);
+    }
+
+    try {
+      const result = await db.insert($sources).values({
+        name: body.name,
+        url: body.url,
+        category: body.category,
+        scrape_frequency: 2, // Default value
+        paywall: body.paywall || false, // Use the value from frontend or default to false
+      });
+
+      return c.json({ success: true });
+    } catch (error) {
+      console.error('Error creating source:', error);
+      return c.json({ error: 'Failed to create source' }, 500);
+    }
+  })
   .get('/events', async c => {
     // require bearer auth token
     // const hasValidToken = hasValidAuthToken(c);
