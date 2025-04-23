@@ -1,6 +1,8 @@
+import os
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
+
 from flask import Flask, jsonify, request
 from datetime import datetime
-import os
 from dotenv import load_dotenv
 from events import get_events
 from llm import call_llm
@@ -17,7 +19,7 @@ import json
 from typing import List, Dict, Any
 from pydantic import BaseModel, Field
 import requests
-from helpers import process_story, get_brief_prompt, get_title_prompt, get_tldr_prompt, brief_system_prompt
+from helpers import process_story, get_brief_prompt, get_title_prompt, get_tldr_prompt, brief_system_prompt, average_pool
 
 load_dotenv()
 
@@ -31,18 +33,18 @@ model = AutoModel.from_pretrained('intfloat/multilingual-e5-small')
 BATCH_SIZE = 64
 CLUSTERING_PARAMS = {
     "umap": {
-        "n_neighbors": 10
+        "n_neighbors": 5
     },
     "hdbscan": {
         "epsilon": 0.0,
-        "min_samples": 0,
-        "min_cluster_size": 3
+        "min_samples": 2,
+        "min_cluster_size": 2
     }
 }
 
-@app.route('/api/events', methods=['GET'])
-def fetch_events():
-    """Fetch and process events for a given date"""
+@app.route('/api/process-events', methods=['GET'])
+def process_events():
+    """Fetch, process and cluster events for a given date"""
     date = request.args.get('date')
     sources, events = get_events(date=date)
     
@@ -68,18 +70,6 @@ def fetch_events():
     )
     articles_df["text_to_embed"] = "query: " + articles_df["summary"]
     
-    return jsonify({
-        "sources": [source.dict() for source in sources],
-        "events": [event.dict() for event in events],
-        "processed_df": articles_df.to_dict(orient='records')
-    })
-
-@app.route('/api/cluster', methods=['POST'])
-def cluster_events():
-    """Cluster events using embeddings and HDBSCAN"""
-    data = request.json
-    articles_df = pd.DataFrame(data['processed_df'])
-    
     # Generate embeddings
     all_embeddings = []
     for i in tqdm(range(0, len(articles_df), BATCH_SIZE)):
@@ -93,7 +83,8 @@ def cluster_events():
         embeddings = F.normalize(embeddings, p=2, dim=1)
         all_embeddings.extend(embeddings.numpy())
     
-    articles_df['embedding'] = all_embeddings
+    # Convert embeddings to lists for JSON serialization
+    articles_df['embedding'] = [embedding.tolist() for embedding in all_embeddings]
     
     # Apply UMAP and HDBSCAN
     umap_embeddings = umap.UMAP(
@@ -112,25 +103,31 @@ def cluster_events():
     )
     cluster_labels = clusterer.fit_predict(umap_embeddings)
     
-    articles_df["cluster"] = cluster_labels
+    articles_df["cluster"] = cluster_labels.tolist()  # Convert to list for JSON serialization
     
     return jsonify({
+        "sources": [source.model_dump(mode='json') for source in sources],
+        "events": [event.model_dump(mode='json') for event in events],
         "clusters": articles_df.to_dict(orient='records'),
-        "cluster_labels": cluster_labels.tolist()
+        "cluster_labels": cluster_labels.tolist()  # Convert to list for JSON serialization
     })
 
-@app.route('/api/analyze', methods=['POST'])
-def analyze_clusters():
-    """Analyze clusters and generate stories"""
+@app.route('/api/generate-brief', methods=['POST'])
+def generate_brief():
+    """Generate a brief from processed events"""
     data = request.json
     clusters = data['clusters']
     events = data['events']
     
     # Process clusters into stories
     clusters_with_articles = []
-    for cluster_id in set(clusters['cluster']) - {-1}:
-        cluster_df = clusters[clusters['cluster'] == cluster_id]
-        articles_ids = cluster_df['id'].tolist()
+    # Get unique cluster IDs excluding -1
+    unique_clusters = set(article['cluster'] for article in clusters) - {-1}
+    
+    for cluster_id in unique_clusters:
+        # Filter articles for this cluster
+        cluster_articles = [article for article in clusters if article['cluster'] == cluster_id]
+        articles_ids = [article['id'] for article in cluster_articles]
         clusters_with_articles.append({
             "cluster_id": cluster_id,
             "articles_ids": articles_ids
@@ -141,7 +138,7 @@ def analyze_clusters():
     
     # Process stories in parallel
     with ThreadPoolExecutor() as executor:
-        futures = [executor.submit(process_story, story) for story in clusters_with_articles]
+        futures = [executor.submit(process_story, story, events) for story in clusters_with_articles]
         cleaned_clusters_raw = list(tqdm(
             (future.result() for future in futures),
             total=len(futures),
@@ -173,33 +170,22 @@ def analyze_clusters():
                     "articles": story.articles,
                 })
     
-    return jsonify({
-        "stories": cleaned_clusters
-    })
-
-@app.route('/api/generate-brief', methods=['POST'])
-def generate_brief():
-    """Generate the final brief from analyzed stories"""
-    data = request.json
-    stories = data['stories']
-    events = data['events']
-    
     # Generate brief outline
     outline_response = call_llm(
-        model="gemini-2.0-flash-thinking-exp-01-21",
+        model="gemini-2.0-flash",
         messages=[
             {"role": "system", "content": brief_system_prompt},
-            {"role": "user", "content": get_brief_prompt(stories, "")}
+            {"role": "user", "content": get_brief_prompt(cleaned_clusters, "")}
         ],
         temperature=0.0
     )
     
     # Generate full brief
     brief_response = call_llm(
-        model="gemini-2.5-pro-exp-03-25",
+        model="gemini-2.5-pro-preview-03-25",
         messages=[
             {"role": "system", "content": brief_system_prompt},
-            {"role": "user", "content": get_brief_prompt(stories, outline_response[0])}
+            {"role": "user", "content": get_brief_prompt(cleaned_clusters, outline_response[0])}
         ],
         temperature=0.0
     )
@@ -225,7 +211,8 @@ def generate_brief():
     return jsonify({
         "title": title_response[0],
         "content": brief_response[0],
-        "tldr": tldr_response[0]
+        "tldr": tldr_response[0],
+        "stories": cleaned_clusters
     })
 
 @app.route('/api/publish', methods=['POST'])
@@ -240,13 +227,13 @@ def publish_report():
         "usedArticles": len(data['used_articles']),
         "usedSources": len(data['used_sources']),
         "tldr": data['tldr'],
-        "model_author": "gemini-2.5-pro-exp-03-25",
+        "model_author": "gemini-2.5-pro-preview-03-25",
         "createdAt": datetime.now().isoformat(),
         "clustering_params": CLUSTERING_PARAMS
     }
     
     response = requests.post(
-        "https://meridian-production.alceos.workers.dev/reports/report",
+        "https://meridian-production.pmckelvy1.workers.dev/reports/report",
         json=report,
         headers={"Authorization": f"Bearer {os.environ.get('MERIDIAN_SECRET_KEY')}"}
     )

@@ -7,6 +7,7 @@ import hdbscan
 from transformers import AutoTokenizer, AutoModel
 import torch
 from concurrent.futures import ThreadPoolExecutor
+from helpers import average_pool, process_story
 
 def generate_embeddings(articles: List[Dict[str, Any]], batch_size: int = 32) -> np.ndarray:
     """Generate embeddings for a list of articles using a multilingual model"""
@@ -160,10 +161,10 @@ def process_clusters(articles: List[Dict[str, Any]], labels: List[int]) -> List[
     
     return stories
 
-def process_stories_parallel(stories: List[Dict[str, Any]], max_workers: int = 4) -> List[Dict[str, Any]]:
+def process_stories_parallel(stories: List[Dict[str, Any]], events: List[Dict[str, Any]], max_workers: int = 4) -> List[Dict[str, Any]]:
     """Process stories in parallel using a thread pool"""
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
-        futures = [executor.submit(process_story, story) for story in stories]
+        futures = [executor.submit(process_story, story, events) for story in stories]
         results = []
         for future in futures:
             try:
