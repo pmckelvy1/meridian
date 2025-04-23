@@ -15,20 +15,20 @@
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
-    "@cloudflare/vitest-pool-workers": "^0.8.7",
-    "@cloudflare/workers-types": "^4.20250327.0",
+    "@cloudflare/vitest-pool-workers": "^0.8.17",
+    "@cloudflare/workers-types": "^4.20250416.0",
     "typescript": "^5.8.2",
     "vitest": "~3.0.9",
     "wrangler": "^4.11.1"
   },
   "dependencies": {
-    "@ai-sdk/google": "^1.2.3",
-    "@cloudflare/puppeteer": "^0.0.15",
+    "@ai-sdk/google": "^1.2.11",
+    "@cloudflare/puppeteer": "^1.0.1",
     "@hono/zod-validator": "^0.4.3",
     "@meridian/database": "workspace:*",
     "@mozilla/readability": "^0.6.0",
-    "ai": "^4.2.6",
-    "fast-xml-parser": "^5.0.9",
+    "ai": "^4.3.9",
+    "fast-xml-parser": "^5.2.0",
     "hono": "^4.7.4",
     "linkedom": "^0.18.9",
     "neverthrow": "^8.2.0",

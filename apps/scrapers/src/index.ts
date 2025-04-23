@@ -12,6 +12,8 @@ export type Env = {
   ARTICLE_PROCESSING_QUEUE: Queue<ArticleQueueMessage>; // *** Add Queue Binding ***
   SCRAPE_RSS_FEED: Workflow;
   PROCESS_ARTICLES: Workflow;
+  ARTICLES_BUCKET: R2Bucket;
+  AI: Ai;
 
   // Secrets
   CLOUDFLARE_BROWSER_RENDERING_API_TOKEN: string;

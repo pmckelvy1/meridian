@@ -2,11 +2,11 @@ import getArticleAnalysisPrompt, { articleAnalysisSchema } from '../prompts/arti
 import { $articles, and, eq, gte, inArray, isNull } from '@meridian/database';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { DomainRateLimiter } from '../lib/rateLimiter';
+import { generateObject } from 'ai';
 import { Env } from '../index';
 import { err, ok } from 'neverthrow';
-import { generateObject } from 'ai';
+import { generateSearchText, getDb } from '../lib/utils';
 import { getArticleWithBrowser, getArticleWithFetch } from '../lib/puppeteer';
-import { getDb } from '../lib/utils';
 import { ResultAsync } from 'neverthrow';
 import { WorkflowEntrypoint, WorkflowStep, WorkflowEvent, WorkflowStepConfig } from 'cloudflare:workers';
 
@@ -146,14 +146,31 @@ export class ProcessArticles extends WorkflowEntrypoint<Env, ProcessArticlesPara
               return response.object;
             }
           );
+
+          const date = article.publishedTime ? new Date(article.publishedTime) : new Date();
+          const fileKey = `${date.getUTCFullYear()}/${date.getUTCMonth() + 1}/${date.getUTCDate()}/${article.id}.txt`;
+
+          const [embedding] = await Promise.all([
+            step.do('generate embeddings for article ${article.id}', async () => {
+              const embeddings = (await env.AI.run('@cf/baai/bge-m3', {
+                text: [generateSearchText({ title: article.title, ...articleAnalysis })],
+              })) as unknown as BGEM3OuputEmbedding;
+              if (embeddings.data === undefined) throw new Error('Empty embeddings');
+              return embeddings.data[0];
+            }),
+            step.do('upload article contents to R2 for article ${article.id}', async () =>
+              env.ARTICLES_BUCKET.put(fileKey, article.text)
+            ),
+          ]);
+
           await step.do(`update db for article ${article.id}`, dbStepConfig, async () =>
             db
               .update($articles)
               .set({
                 processedAt: new Date(),
-                content: article.text,
                 title: article.title,
                 language: articleAnalysis.language,
+                contentFileKey: fileKey,
                 primary_location: articleAnalysis.primary_location,
                 completeness: articleAnalysis.completeness,
                 content_quality: articleAnalysis.content_quality,
@@ -162,9 +179,11 @@ export class ProcessArticles extends WorkflowEntrypoint<Env, ProcessArticlesPara
                 topic_tags: articleAnalysis.topic_tags,
                 key_entities: articleAnalysis.key_entities,
                 content_focus: articleAnalysis.content_focus,
+                embedding,
               })
               .where(eq($articles.id, article.id))
           );
+
           return { id: article.id, success: true };
         } catch (error) {
           await step.do(`mark article ${article.id} as failed in analysis`, dbStepConfig, async () =>

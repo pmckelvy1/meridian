@@ -1,5 +1,5 @@
+import { boolean, index, integer, jsonb, pgEnum, pgTable, serial, text, timestamp, vector } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
-import { boolean, integer, jsonb, pgTable, serial, text, timestamp, pgEnum } from 'drizzle-orm/pg-core';
 
 /**
  * Note: We use $ to denote the table objects
@@ -28,35 +28,39 @@ export const $sources = pgTable('sources', {
   lastChecked: timestamp('last_checked', { mode: 'date' }),
 });
 
-export const $articles = pgTable('articles', {
-  id: serial('id').primaryKey(),
+export const $articles = pgTable(
+  'articles',
+  {
+    id: serial('id').primaryKey(),
 
-  title: text('title').notNull(),
-  url: text('url').notNull().unique(),
-  publishDate: timestamp('publish_date', { mode: 'date' }),
-  status: articleStatusEnum().default('PENDING_FETCH'),
+    title: text('title').notNull(),
+    url: text('url').notNull().unique(),
+    publishDate: timestamp('publish_date', { mode: 'date' }),
+    status: articleStatusEnum().default('PENDING_FETCH'),
+    contentFileKey: text('content_file_key'),
 
-  content: text('content'),
+    language: text('language'),
+    primary_location: text('primary_location'),
+    completeness: articleCompletenessEnum(),
+    content_quality: articleContentQualityEnum(),
+    event_summary_points: jsonb('event_summary_points'),
+    thematic_keywords: jsonb('thematic_keywords'),
+    topic_tags: jsonb('topic_tags'),
+    key_entities: jsonb('key_entities'),
+    content_focus: jsonb('content_focus'),
+    embedding: vector('embedding', { dimensions: 1024 }),
 
-  language: text('language'),
-  primary_location: text('primary_location'),
-  completeness: articleCompletenessEnum(),
-  content_quality: articleContentQualityEnum(),
-  event_summary_points: jsonb('event_summary_points'),
-  thematic_keywords: jsonb('thematic_keywords'),
-  topic_tags: jsonb('topic_tags'),
-  key_entities: jsonb('key_entities'),
-  content_focus: jsonb('content_focus'),
+    failReason: text('fail_reason'),
 
-  failReason: text('fail_reason'),
+    sourceId: integer('source_id')
+      .references(() => $sources.id)
+      .notNull(),
 
-  sourceId: integer('source_id')
-    .references(() => $sources.id)
-    .notNull(),
-
-  processedAt: timestamp('processed_at', { mode: 'date' }),
-  createdAt: timestamp('created_at', { mode: 'date' }).default(sql`CURRENT_TIMESTAMP`),
-});
+    processedAt: timestamp('processed_at', { mode: 'date' }),
+    createdAt: timestamp('created_at', { mode: 'date' }).default(sql`CURRENT_TIMESTAMP`),
+  },
+  table => [index('embeddingIndex').using('hnsw', table.embedding.op('vector_cosine_ops'))]
+);
 
 export const $reports = pgTable('reports', {
   id: serial('id').primaryKey(),
