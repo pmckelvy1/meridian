@@ -7,8 +7,8 @@ BASE_URL = "http://localhost:5000"
 def main():
     # 1. Process events (fetch, process and cluster)
     print("Processing events...")
-    # today = datetime.now().strftime("%Y-%m-%d")
-    today = "2025-04-19"
+    today = datetime.now().strftime("%Y-%m-%d")
+    # today = "2025-04-19"
     response = requests.get(f"{BASE_URL}/api/process-events", params={"date": today})
     processed_data = response.json()
     
