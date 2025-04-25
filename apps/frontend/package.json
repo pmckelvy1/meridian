@@ -2,6 +2,7 @@
   "name": "@meridian/frontend",
   "private": true,
   "type": "module",
+  "version": "0.0.0",
   "license": "MIT",
   "author": {
     "name": "Iliane Amadou",
@@ -22,19 +23,20 @@
     "@meridian/database": "workspace:*",
     "@nuxtjs/color-mode": "3.5.2",
     "@radix-ui/colors": "^3.0.0",
-    "@tailwindcss/typography": "^0.5.10",
-    "@tailwindcss/vite": "^4.0.13",
+    "@tailwindcss/typography": "^0.5.16",
+    "@tailwindcss/vite": "^4.1.4",
     "@types/markdown-it": "^14.1.2",
-    "@unhead/vue": "^2.0.0-rc.1",
+    "@unhead/vue": "^2.0.8",
     "markdown-it": "^14.1.0",
     "markdown-it-color": "^2.1.1",
     "markdown-it-deflist": "^3.0.0",
     "nuxt": "^3.16.2",
-    "tailwindcss": "^4.0.13",
+    "nuxt-auth-utils": "0.5.20",
+    "tailwindcss": "^4.1.4",
     "vue": "^3.5.13",
     "vue-router": "^4.5.0",
-    "vue-tsc": "^2.2.8",
-    "wrangler": "^4.1.0",
-    "zod": "^3.24.2"
+    "vue-tsc": "^2.2.10",
+    "wrangler": "^4.13.0",
+    "zod": "^3.24.3"
   }
 }

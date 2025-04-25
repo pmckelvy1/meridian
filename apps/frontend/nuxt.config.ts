@@ -5,49 +5,20 @@ export default defineNuxtConfig({
   app: {
     head: {
       htmlAttrs: { lang: 'en' },
-      link: [
-        {
-          rel: 'icon',
-          type: 'image/png',
-          href: '/favicon.ico',
-        },
-      ],
+      link: [{ rel: 'icon', type: 'image/png', href: '/favicon.ico' }],
     },
   },
 
-  modules: ['@nuxtjs/color-mode'],
-
+  colorMode: { classSuffix: '', preference: 'system', fallback: 'system' },
   compatibilityDate: '2025-03-01',
-  devtools: {
-    enabled: true,
-  },
-  devServer: {
-    host: '0.0.0.0',
-  },
-
   css: ['~/assets/css/main.css'],
-  vite: {
-    plugins: [tailwindcss()],
-  },
 
-  runtimeConfig: {
-    public: {
-      WORKER_API: 'http://localhost:8787',
-    },
-    DATABASE_URL: '',
-    mailerlite: {
-      api_key: '',
-      group_id: '',
-    },
-  },
+  devtools: { enabled: true },
+  devServer: { host: '0.0.0.0' },
 
-  srcDir: 'src',
+  modules: ['@nuxtjs/color-mode', 'nuxt-auth-utils'],
 
-  nitro: {
-    prerender: {
-      autoSubfolderIndex: false,
-    },
-  },
+  nitro: { prerender: { autoSubfolderIndex: false } },
 
   routeRules: {
     // Cache the list of briefs for 1 hour on CDN, 15 mins in browser
@@ -68,10 +39,13 @@ export default defineNuxtConfig({
       },
     },
   },
-
-  colorMode: {
-    classSuffix: '',
-    preference: 'system',
-    fallback: 'system',
+  runtimeConfig: {
+    database: { url: '' },
+    mailerlite: { api_key: '', group_id: '' },
+    public: { WORKER_API: 'http://localhost:8787' },
   },
+
+  srcDir: 'src',
+
+  vite: { plugins: [tailwindcss()] },
 });
