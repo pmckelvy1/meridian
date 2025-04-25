@@ -15,6 +15,13 @@
       "when": 1745506132997,
       "tag": "0001_certain_scream",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1745603176611,
+      "tag": "0002_curious_starhawk",
+      "breakpoints": true
     }
   ]
 }

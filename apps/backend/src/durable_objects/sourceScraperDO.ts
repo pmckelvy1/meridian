@@ -1,4 +1,4 @@
-import { $articles } from '@meridian/database';
+import { $articles, $sources, eq } from '@meridian/database';
 import { Env } from '../index';
 import { err, ok, Result, ResultAsync } from 'neverthrow';
 import { getDb } from '../lib/utils';
@@ -168,6 +168,12 @@ export class SourceScraperDO extends DurableObject<Env> {
       logger.error('Failed to put initial state after retries. DO may be unstable.');
       throw new Error('Failed to persist initial DO state.');
     }
+
+    // Update the source's do_initialized_at field
+    await getDb(this.env.DATABASE_URL)
+      .update($sources)
+      .set({ do_initialized_at: new Date() })
+      .where(eq($sources.id, sourceData.id));
 
     // Only set alarm if state was successfully stored
     await this.ctx.storage.setAlarm(Date.now() + 5000);
@@ -419,6 +425,14 @@ export class SourceScraperDO extends DurableObject<Env> {
    */
   async destroy() {
     this.logger.info('Destroy called, deleting storage');
+    const state = await this.ctx.storage.get<SourceState>('state');
+    if (state?.sourceId) {
+      // Clear the do_initialized_at field when DO is destroyed
+      await getDb(this.env.DATABASE_URL)
+        .update($sources)
+        .set({ do_initialized_at: null })
+        .where(eq($sources.id, state.sourceId));
+    }
     await this.ctx.storage.deleteAll();
     this.logger.info('Storage deleted');
   }

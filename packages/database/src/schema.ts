@@ -33,6 +33,7 @@ export const $sources = pgTable('sources', {
   paywall: boolean('paywall').notNull().default(false),
   category: text('category').notNull(),
   lastChecked: timestamp('last_checked', { mode: 'date' }),
+  do_initialized_at: timestamp('do_initialized_at', { mode: 'date' }),
 });
 
 export const $articles = pgTable(
