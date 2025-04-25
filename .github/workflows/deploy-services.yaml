@@ -68,6 +68,8 @@ jobs:
             DATABASE_URL
             GEMINI_BASE_URL
             GEMINI_API_KEY
+            MERIDIAN_ML_SERVICE_URL
+            MERIDIAN_ML_SERVICE_API_KEY
         env:
           API_TOKEN: ${{ secrets.API_TOKEN }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
