@@ -44,10 +44,10 @@ const app = new Hono<HonoEnv>()
   })
   .get('/events', async c => {
     // require bearer auth token
-    // const hasValidToken = hasValidAuthToken(c);
-    // if (!hasValidToken) {
-    //   return c.json({ error: 'Unauthorized' }, 401);
-    // }
+    const hasValidToken = hasValidAuthToken(c);
+    if (!hasValidToken) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
 
     // Check if a date query parameter was provided in yyyy-mm-dd format
     const dateParam = c.req.query('date');
