@@ -9,11 +9,11 @@ const embeddingsResponseSchema = z.object({
 
 export async function createEmbeddings(env: Env, texts: string[]) {
   const response = await tryCatchAsync(
-    fetch(env.ML_SERVICE_URL + '/embeddings', {
+    fetch(env.MERIDIAN_ML_SERVICE_URL + '/embeddings', {
       method: 'POST',
       body: JSON.stringify({ texts }),
       headers: {
-        'X-API-Token': env.ML_SERVICE_API_TOKEN,
+        'X-API-Token': env.MERIDIAN_ML_SERVICE_API_KEY,
         'Content-Type': 'application/json',
       },
     })
