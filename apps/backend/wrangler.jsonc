@@ -57,10 +57,26 @@
   "env": {
     "production": {
       "name": "meridian-backend-prod",
+      "durable_objects": {
+        "bindings": [
+          {
+            "name": "SOURCE_SCRAPER",
+            "class_name": "SourceScraperDO",
+          },
+        ],
+      },
+      "workflows": [
+        {
+          "name": "meridian_process_articles",
+          "binding": "PROCESS_ARTICLES",
+          "class_name": "ProcessArticles",
+        },
+      ],
       "r2_buckets": [
         {
           "binding": "ARTICLES_BUCKET",
           "bucket_name": "meridian-articles-prod",
+          "jurisdiction": "eu",
         },
       ],
       "queues": {
