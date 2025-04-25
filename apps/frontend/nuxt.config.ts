@@ -18,7 +18,7 @@ export default defineNuxtConfig({
 
   modules: ['@nuxtjs/color-mode', 'nuxt-auth-utils'],
 
-  nitro: { prerender: { autoSubfolderIndex: false } },
+  nitro: { prerender: { autoSubfolderIndex: false }, cloudflare: { nodeCompat: true, deployConfig: true } },
 
   routeRules: {
     // Cache the list of briefs for 1 hour on CDN, 15 mins in browser
