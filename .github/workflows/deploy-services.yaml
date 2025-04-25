@@ -59,7 +59,7 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           packageManager: pnpm
-          workingDirectory: 'apps/scrapers'
+          workingDirectory: 'apps/backend'
           environment: production
           secrets: |
             API_TOKEN
