@@ -1,1 +1,0 @@
-ALTER TABLE "reports" ALTER COLUMN "created_at" SET NOT NULL;

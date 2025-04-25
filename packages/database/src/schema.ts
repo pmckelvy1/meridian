@@ -6,17 +6,24 @@ import { sql } from 'drizzle-orm';
  * This frees up the uses of sources, articles, reports, etc as variables in the codebase
  **/
 
-const articleCompletenessEnum = pgEnum('completeness', ['COMPLETE', 'PARTIAL_USEFUL', 'PARTIAL_USELESS']);
-const articleContentQualityEnum = pgEnum('content_quality', ['OK', 'LOW_QUALITY', 'JUNK']);
-const articleStatusEnum = pgEnum('status', [
+export const articleStatusEnum = pgEnum('article_status', [
   'PENDING_FETCH',
   'CONTENT_FETCHED',
-  'PROCESSING',
   'PROCESSED',
+  'SKIPPED_PDF',
+
   'FETCH_FAILED',
   'RENDER_FAILED',
-  'PROCESS_FAILED',
+  'AI_ANALYSIS_FAILED',
+  'EMBEDDING_FAILED',
+  'R2_UPLOAD_FAILED',
 ]);
+export const articleCompletenessEnum = pgEnum('article_completeness', [
+  'COMPLETE',
+  'PARTIAL_USEFUL',
+  'PARTIAL_USELESS',
+]);
+export const articleContentQualityEnum = pgEnum('article_content_quality', ['OK', 'LOW_QUALITY', 'JUNK']);
 
 export const $sources = pgTable('sources', {
   id: serial('id').primaryKey(),
@@ -43,12 +50,13 @@ export const $articles = pgTable(
     primary_location: text('primary_location'),
     completeness: articleCompletenessEnum(),
     content_quality: articleContentQualityEnum(),
+    used_browser: boolean('used_browser'),
     event_summary_points: jsonb('event_summary_points'),
     thematic_keywords: jsonb('thematic_keywords'),
     topic_tags: jsonb('topic_tags'),
     key_entities: jsonb('key_entities'),
     content_focus: jsonb('content_focus'),
-    embedding: vector('embedding', { dimensions: 1024 }),
+    embedding: vector('embedding', { dimensions: 384 }),
 
     failReason: text('fail_reason'),
 

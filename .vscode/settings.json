@@ -16,9 +16,14 @@
     "**/node_modules": true,
     "**/.nuxt": true,
     "**/.output": true,
-    "**/dist": true
+    "**/dist": true,
+    "**/.wrangler": true,
+    "**/.mypy_cache": true,
+    "**/.ruff_cache": true,
+    "**/*.egg-info": true,
+    "**/__pycache__": true
   },
   "[python]": {
-    "editor.defaultFormatter": "ms-python.black-formatter"
+    "editor.defaultFormatter": "charliermarsh.ruff"
   }
 }

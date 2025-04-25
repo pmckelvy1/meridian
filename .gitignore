@@ -191,3 +191,8 @@ apps/scrapers/feeds.json
 __pycache__
 
 apps/briefs
+
+# python stuff
+.mypy_cache
+.ruff_cache
+*.egg-info

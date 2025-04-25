@@ -1,1 +1,0 @@
-ALTER TABLE "sources" ADD COLUMN "paywall" boolean DEFAULT false NOT NULL;

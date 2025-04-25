@@ -1,0 +1,57 @@
+// wrangler.jsonc
+{
+  "name": "meridian-backend",
+  "main": "src/index.ts",
+  "compatibility_date": "2025-04-02",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1, // optional. default = 1.
+  },
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "SOURCE_SCRAPER",
+        "class_name": "SourceScraperDO",
+      },
+    ],
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_classes": ["SourceScraperDO"],
+    },
+  ],
+  "queues": {
+    "producers": [
+      {
+        "queue": "article-processing-queue",
+        "binding": "ARTICLE_PROCESSING_QUEUE",
+      },
+    ],
+    "consumers": [
+      {
+        "queue": "article-processing-queue",
+        "max_batch_size": 100,
+        "max_batch_timeout": 30,
+        "max_retries": 5,
+        "dead_letter_queue": "article-processing-dlq",
+        // "retry_delay": 60
+      },
+    ],
+  },
+  "r2_buckets": [
+    {
+      "binding": "ARTICLES_BUCKET",
+      "bucket_name": "meridian-articles",
+      "preview_bucket_name": "meridian-articles-dev",
+    },
+  ],
+  "workflows": [
+    {
+      "name": "meridian_process_articles",
+      "binding": "PROCESS_ARTICLES",
+      "class_name": "ProcessArticles",
+    },
+  ],
+}

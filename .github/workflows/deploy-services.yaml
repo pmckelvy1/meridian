@@ -11,7 +11,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
         with:
-          version: 9.15.4
+          version: 10.9.0
 
       - uses: actions/setup-node@v4
         with:
@@ -62,20 +62,26 @@ jobs:
           workingDirectory: 'apps/scrapers'
           environment: production
           secrets: |
-            GOOGLE_BASE_URL
-            GOOGLE_API_KEY
+            API_TOKEN
+            CLOUDFLARE_API_TOKEN
+            CLOUDFLARE_ACCOUNT_ID
             DATABASE_URL
-            MERIDIAN_SECRET_KEY
+            GEMINI_BASE_URL
+            GEMINI_API_KEY
         env:
-          GOOGLE_BASE_URL: ${{ secrets.GOOGLE_BASE_URL }}
-          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          API_TOKEN: ${{ secrets.API_TOKEN }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          MERIDIAN_SECRET_KEY: ${{ secrets.MERIDIAN_SECRET_KEY }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          GEMINI_BASE_URL: ${{ secrets.GEMINI_BASE_URL }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          MERIDIAN_ML_SERVICE_URL: ${{ secrets.MERIDIAN_ML_SERVICE_URL }}
+          MERIDIAN_ML_SERVICE_API_KEY: ${{ secrets.MERIDIAN_ML_SERVICE_API_KEY }}
 
-      - name: Build Nuxt Application
-        run: pnpm build --filter=@meridian/frontend # Or 'yarn generate', ensure this matches your static build script in package.json (npx nuxi generate)
-        env:
-          NUXT_DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      # - name: Build Nuxt Application
+      #   run: pnpm build --filter=@meridian/frontend # Or 'yarn generate', ensure this matches your static build script in package.json (npx nuxi generate)
+      #   env:
+      #     NUXT_DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
       # - name: Publish to Cloudflare Pages
       #   uses: cloudflare/wrangler-action@v3 # Use the official Cloudflare Wrangler action

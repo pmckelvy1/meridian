@@ -22,15 +22,14 @@
     "seed": "tsx src/seed.ts"
   },
   "dependencies": {
-    "drizzle-orm": "^0.41.0",
+    "drizzle-orm": "^0.42.0",
     "postgres": "^3.4.5",
     "tsx": "^4.19.3"
   },
   "devDependencies": {
-    "@meridian/typescript-config": "workspace:*",
     "@types/node": "^22.13.14",
     "dotenv": "^16.4.7",
-    "drizzle-kit": "^0.30.6",
+    "drizzle-kit": "^0.31.0",
     "typescript": "^5.8.2"
   }
 }
