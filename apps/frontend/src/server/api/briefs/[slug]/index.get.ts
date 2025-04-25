@@ -1,5 +1,5 @@
-import { $reports, eq, and, gte, lte, getDb } from '@meridian/database';
-import { ensureDate, formatReportDate } from '~/server/lib/utils';
+import { $reports, eq, and, gte, lte } from '@meridian/database';
+import { ensureDate, formatReportDate, getDB } from '~/server/lib/utils';
 
 interface Brief {
   id: number;
@@ -20,8 +20,6 @@ interface Brief {
 }
 
 export default defineEventHandler(async event => {
-  const db = getDb(useRuntimeConfig(event).DATABASE_URL);
-
   const slug = getRouterParam(event, 'slug');
   if (slug === undefined) {
     throw createError({ statusCode: 400, statusMessage: 'Slug is required' });
@@ -38,7 +36,7 @@ export default defineEventHandler(async event => {
   const endOfDay = new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1);
 
   // get report created on this day
-  const report = await db.query.$reports.findFirst({
+  const report = await getDB(event).query.$reports.findFirst({
     where: and(gte($reports.createdAt, startOfDay), lte($reports.createdAt, endOfDay)),
     columns: {
       id: true,

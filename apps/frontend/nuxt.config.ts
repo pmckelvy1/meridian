@@ -39,10 +39,16 @@ export default defineNuxtConfig({
       },
     },
   },
+
+  // In production, these are set via the environment variables
+  // NUXT_+{key}
   runtimeConfig: {
-    database: { url: '' },
-    mailerlite: { api_key: '', group_id: '' },
-    public: { WORKER_API: 'http://localhost:8787' },
+    database: { url: '' }, // NUXT_DATABASE_URL
+    mailerlite: { api_key: '', group_id: '' }, // NUXT_MAILERLITE_API_KEY, NUXT_MAILERLITE_GROUP_ID
+    admin: { username: 'admin', password: 'hunter2' }, // NUXT_ADMIN_USERNAME, NUXT_ADMIN_PASSWORD
+
+    // IMPORTANT: all "public" config is exposed to the client
+    public: { WORKER_API: 'http://localhost:8787' }, // NUXT_PUBLIC_WORKER_API
   },
 
   srcDir: 'src',

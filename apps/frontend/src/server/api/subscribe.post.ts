@@ -1,7 +1,7 @@
 import MailerLite from '@mailerlite/mailerlite-nodejs';
-import { getDb } from '@meridian/database';
 import { $newsletter } from '@meridian/database';
 import { z } from 'zod';
+import { getDB } from '../lib/utils';
 
 export default defineEventHandler(async event => {
   const config = useRuntimeConfig(event);
@@ -16,7 +16,7 @@ export default defineEventHandler(async event => {
   try {
     // Insert email into the newsletter table
     await Promise.all([
-      getDb(config.DATABASE_URL).insert($newsletter).values({ email: bodyContent.data.email }).onConflictDoNothing(),
+      getDB(event).insert($newsletter).values({ email: bodyContent.data.email }).onConflictDoNothing(),
       (async () => {
         if (config.mailerlite.api_key === undefined || config.mailerlite.group_id === undefined) {
           console.warn('MailerLite is not configured');

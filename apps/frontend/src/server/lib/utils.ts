@@ -1,3 +1,6 @@
+import { getDb } from '@meridian/database';
+import type { H3Event } from 'h3';
+
 export const MONTH_NAMES = [
   'January',
   'February',
@@ -34,4 +37,8 @@ export function generateReportSlug(date: Date): string {
 
 export function ensureDate(dateInput: Date | string | null | undefined): Date {
   return dateInput ? new Date(dateInput) : new Date();
+}
+
+export function getDB(event: H3Event) {
+  return getDb(useRuntimeConfig(event).database.url);
 }

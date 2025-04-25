@@ -1,10 +1,8 @@
 import { $reports, desc, getDb } from '@meridian/database';
-import { ensureDate, formatReportDate, generateReportSlug } from '~/server/lib/utils';
+import { ensureDate, formatReportDate, generateReportSlug, getDB } from '~/server/lib/utils';
 
 export default defineEventHandler(async event => {
-  const db = getDb(useRuntimeConfig(event).DATABASE_URL);
-
-  const reports = await db.query.$reports.findMany({
+  const reports = await getDB(event).query.$reports.findMany({
     orderBy: desc($reports.createdAt),
     columns: { id: true, createdAt: true, title: true },
   });

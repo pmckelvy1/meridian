@@ -151,7 +151,7 @@ useSeoMeta({
                   :items="tocItems"
                   :active-heading-id="activeHeadingId"
                   @navigate="
-                    id => {
+                    (id: string) => {
                       scrollToSection(id);
                       mobileMenuOpen = false;
                     }
