@@ -25,17 +25,17 @@
   "queues": {
     "producers": [
       {
-        "queue": "article-processing-queue",
+        "queue": "meridian-article-processing-queue",
         "binding": "ARTICLE_PROCESSING_QUEUE",
       },
     ],
     "consumers": [
       {
-        "queue": "article-processing-queue",
+        "queue": "meridian-article-processing-queue",
         "max_batch_size": 100,
         "max_batch_timeout": 30,
         "max_retries": 5,
-        "dead_letter_queue": "article-processing-dlq",
+        "dead_letter_queue": "meridian-article-processing-dlq",
         // "retry_delay": 60
       },
     ],
@@ -54,4 +54,32 @@
       "class_name": "ProcessArticles",
     },
   ],
+  "env": {
+    "production": {
+      "name": "meridian-backend-prod",
+      "r2_buckets": [
+        {
+          "binding": "ARTICLES_BUCKET",
+          "bucket_name": "meridian-articles-prod",
+        },
+      ],
+      "queues": {
+        "producers": [
+          {
+            "queue": "meridian-article-processing-queue-prod",
+            "binding": "ARTICLE_PROCESSING_QUEUE",
+          },
+        ],
+        "consumers": [
+          {
+            "queue": "meridian-article-processing-queue-prod",
+            "max_batch_size": 100,
+            "max_batch_timeout": 30,
+            "max_retries": 5,
+            "dead_letter_queue": "meridian-article-processing-dlq-prod",
+          },
+        ],
+      },
+    },
+  },
 }
