@@ -15,6 +15,9 @@ export type Env = {
   // Secrets
   API_TOKEN: string;
 
+  AXIOM_DATASET: string | undefined; // optional, use if you want to send logs to axiom
+  AXIOM_TOKEN: string | undefined; // optional, use if you want to send logs to axiom
+
   CLOUDFLARE_API_TOKEN: string;
   CLOUDFLARE_ACCOUNT_ID: string;
 
@@ -71,6 +74,52 @@ export default {
       article_count: articlesToProcess.length,
     });
     batch.ackAll(); // Acknowledge the entire batch now that the Workflow has taken over
+  },
+  async tail(events: TraceItem[], env: Env) {
+    const axiomToken = env.AXIOM_TOKEN;
+    const axiomDataset = env.AXIOM_DATASET;
+
+    // only proceed if axiomToken and axiomDataset are set
+    if (!axiomToken || !axiomDataset) {
+      return;
+    }
+
+    await fetch(`https://api.axiom.co/v1/datasets/${axiomDataset}/ingest`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${axiomToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(
+        // flatten all logs from all events and transform to axiom format
+        events.flatMap(event => {
+          // base context that'll be added to every log
+          const context = {
+            script: event.scriptName,
+            url: (event.event as TraceItemFetchEventInfo)?.request?.url,
+            colo: (event.event as TraceItemFetchEventInfo)?.request?.cf?.colo,
+            // "cf-ray": (event.event as TraceItemFetchEventInfo)?.request.cf.ray,
+          };
+          return [
+            // normal logs
+            ...event.logs.map(log => ({
+              ...context,
+              ...JSON.parse(log.message[0]), // log.message is array
+              level: log.level,
+              timestamp: log.timestamp,
+            })),
+            // exceptions as error logs
+            ...event.exceptions.map(err => ({
+              ...context,
+              name: err.name,
+              message: err.message,
+              level: 'exception',
+              timestamp: err.timestamp,
+            })),
+          ];
+        })
+      ),
+    });
   },
 } satisfies ExportedHandler<Env>;
 

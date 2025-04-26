@@ -54,6 +54,11 @@
       "class_name": "ProcessArticles",
     },
   ],
+  "tail_consumers": [
+    {
+      "service": "meridian-backend",
+    },
+  ],
   "env": {
     "production": {
       "name": "meridian-backend-prod",
@@ -96,6 +101,11 @@
           },
         ],
       },
+      "tail_consumers": [
+        {
+          "service": "meridian-backend-prod",
+        },
+      ],
     },
   },
 }
