@@ -7,7 +7,7 @@ import hdbscan
 from transformers import AutoTokenizer, AutoModel
 import torch
 from concurrent.futures import ThreadPoolExecutor
-from helpers import average_pool, process_story
+from src.helpers import average_pool, process_story
 
 def generate_embeddings(articles: List[Dict[str, Any]], batch_size: int = 32) -> np.ndarray:
     """Generate embeddings for a list of articles using a multilingual model"""

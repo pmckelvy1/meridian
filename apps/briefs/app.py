@@ -4,8 +4,8 @@ os.environ["TOKENIZERS_PARALLELISM"] = "false"
 from flask import Flask, jsonify, request
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
-from events import get_events
-from llm import call_llm
+from src.events import get_events
+from src.llm import call_llm
 import pandas as pd
 import torch
 import torch.nn.functional as F
@@ -15,11 +15,10 @@ from tqdm import tqdm
 import hdbscan
 import umap
 from concurrent.futures import ThreadPoolExecutor
-import json
 from typing import List, Dict, Any, Tuple
 from pydantic import BaseModel, Field
 import requests
-from helpers import process_story, get_brief_prompt, get_title_prompt, get_tldr_prompt, brief_system_prompt, average_pool
+from src.helpers import process_story, get_brief_prompt, get_title_prompt, get_tldr_prompt, brief_system_prompt, average_pool
 import pytz
 
 load_dotenv()
@@ -69,8 +68,8 @@ def get_cycle_boundaries(dt: datetime) -> Tuple[datetime, datetime]:
 
 def get_events_for_cycle(cycle_start: datetime, cycle_end: datetime) -> Tuple[List[Any], List[Any]]:
     """Get events that occurred within the specified cycle."""
-    sources, events = get_events()
-    
+    sources, events = get_events(cycle_end.isoformat())
+    print(f"Events: {events}")
     # Filter events to only include those within the cycle
     cycle_events = [
         event for event in events
@@ -89,10 +88,10 @@ def generate_report():
     try:
         # Parse the datetime
         dt = datetime.fromisoformat(date_str)
+        print(f"Generating report for {dt}")
         
         # Get cycle boundaries
         cycle_start, cycle_end = get_cycle_boundaries(dt)
-        
         # Check if a report already exists for this cycle
         response = requests.get(
             f"https://meridian-production.pmckelvy1.workers.dev/reports/cycle",
@@ -108,7 +107,7 @@ def generate_report():
         
         # Step 1: Fetch and process events for this cycle
         sources, events = get_events_for_cycle(cycle_start, cycle_end)
-        
+        print(f"Events: {events}")
         # Process events into DataFrame
         articles_df = pd.DataFrame(events)
         for col in articles_df.columns:

@@ -54,12 +54,11 @@ const app = new Hono<HonoEnv>()
 
     let endDate: Date;
     if (dateParam) {
-      // Parse the date parameter explicitly with UTC
-      // Append T07:00:00Z to ensure it's 7am UTC
-      endDate = new Date(`${dateParam}T07:00:00Z`);
+      // Parse the ISO datetime directly
+      endDate = new Date(dateParam);
       // Check if date is valid
       if (isNaN(endDate.getTime())) {
-        return c.json({ error: 'Invalid date format. Please use yyyy-mm-dd' }, 400);
+        return c.json({ error: 'Invalid date format. Please use ISO datetime format (e.g. YYYY-MM-DDTHH:mm:ss)' }, 400);
       }
     } else {
       // Use current date if no date parameter was provided

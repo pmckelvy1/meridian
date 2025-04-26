@@ -4,7 +4,7 @@ import json
 from retry import retry
 from json_repair import repair_json
 
-from llm import call_llm
+from src.llm import call_llm
 
 # Helper function for pooling embeddings
 def average_pool(last_hidden_states, attention_mask):
