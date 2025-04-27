@@ -1,11 +1,11 @@
-name: Deploy services
+name: Build docker
 on:
   push:
     branches:
       - main
 jobs:
   build-docker:
-    runs-on: ubuntu-latest
+    runs-on: [linux, x64]
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
