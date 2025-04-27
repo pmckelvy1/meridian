@@ -69,7 +69,6 @@ def get_cycle_boundaries(dt: datetime) -> Tuple[datetime, datetime]:
 def get_events_for_cycle(cycle_start: datetime, cycle_end: datetime) -> Tuple[List[Any], List[Any]]:
     """Get events that occurred within the specified cycle."""
     sources, events = get_events(cycle_end.isoformat())
-    print(f"Events: {events}")
     # Filter events to only include those within the cycle
     cycle_events = [
         event for event in events
@@ -107,17 +106,19 @@ def generate_report():
         
         # Step 1: Fetch and process events for this cycle
         sources, events = get_events_for_cycle(cycle_start, cycle_end)
-        print(f"Events: {events}")
         # Process events into DataFrame
-        articles_df = pd.DataFrame(events)
-        for col in articles_df.columns:
-            articles_df[col] = articles_df[col].apply(
-                lambda x: x[1] if isinstance(x, tuple) else x
-            )
-        articles_df.columns = [
-            "id", "sourceId", "url", "title", "publishDate", 
-            "content", "location", "relevance", "completeness", "summary"
-        ]
+        articles_df = pd.DataFrame([{
+            "id": event.id,
+            "sourceId": event.sourceId,
+            "url": event.url,
+            "title": event.title,
+            "publishDate": event.publishDate,
+            "content": event.content,
+            "location": event.location,
+            "relevance": event.relevance,
+            "completeness": event.completeness,
+            "summary": event.summary
+        } for event in events])
         
         # Clean up summaries
         articles_df["summary"] = (
@@ -180,6 +181,7 @@ def generate_report():
         
         clusters_with_articles = sorted(clusters_with_articles, key=lambda x: len(x['articles_ids']), reverse=True)
         
+        print("Events: {}".format(events))
         # Process stories in parallel
         with ThreadPoolExecutor() as executor:
             futures = [executor.submit(process_story, story, events) for story in clusters_with_articles]

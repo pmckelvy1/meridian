@@ -57,7 +57,6 @@ def get_events(date: str = None):
         headers={"Authorization": f"Bearer {os.environ.get('MERIDIAN_SECRET_KEY')}"},
     )
     data = response.json()
-    print(f"Data: {data}")
     sources = [Source(**source) for source in data["sources"]]
     events = [Event(**event) for event in data["events"]]
 

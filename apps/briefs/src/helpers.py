@@ -53,10 +53,10 @@ def process_story(cluster, events):
     
     story_article_md = ""
     for article_id in story_articles_ids:
-        article = next((e for e in events if e['id'] == article_id), None)
+        article = next((e for e in events if e.id == article_id), None)
         if article is None:
             continue
-        story_article_md += f"- (#{article['id']}) [{article['title']}]({article['url']})\n"
+        story_article_md += f"- (#{article.id}) [{article.title}]({article.url})\n"
     story_article_md = story_article_md.strip()
 
     prompt = f"""
