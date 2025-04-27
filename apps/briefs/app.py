@@ -106,6 +106,15 @@ def generate_report():
         
         # Step 1: Fetch and process events for this cycle
         sources, events = get_events_for_cycle(cycle_start, cycle_end)
+        
+        # Check if there are any events
+        if not events:
+            return jsonify({
+                "error": "No events found for the specified time period",
+                "cycle_start": cycle_start.isoformat(),
+                "cycle_end": cycle_end.isoformat()
+            }), 404
+            
         # Process events into DataFrame
         articles_df = pd.DataFrame([{
             "id": event.id,
@@ -181,7 +190,6 @@ def generate_report():
         
         clusters_with_articles = sorted(clusters_with_articles, key=lambda x: len(x['articles_ids']), reverse=True)
         
-        print("Events: {}".format(events))
         # Process stories in parallel
         with ThreadPoolExecutor() as executor:
             futures = [executor.submit(process_story, story, events) for story in clusters_with_articles]
@@ -288,7 +296,7 @@ def generate_report():
         })
         
     except ValueError as e:
-        return jsonify({"error": f"Invalid date format: {str(e)}"}), 400
+        return jsonify({"error": f"Error:{str(e)}"}), 400
     except Exception as e:
         return jsonify({"error": f"An error occurred: {str(e)}"}), 500
 
