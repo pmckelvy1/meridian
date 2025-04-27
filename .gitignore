@@ -211,3 +211,5 @@ apps/scrapers/.dev.vars.local
 
 apps/briefs/src/env
 
+apps/briefs/generate-report.py
+
