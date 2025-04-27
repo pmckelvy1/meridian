@@ -192,159 +192,175 @@ export class SourceScraperDO extends DurableObject<Env> {
    * 6. Schedules the next alarm
    */
   async alarm(): Promise<void> {
-    const state = await this.ctx.storage.get<SourceState>('state');
-    if (!state) {
-      this.logger.error('State not found in alarm. Cannot proceed.');
-      // Maybe schedule alarm far in the future or log an error to an external system
-      // We cannot proceed without state.
-      return;
-    }
+    // Keep logger instance outside try block if possible,
+    // but create child logger inside if needed after state is fetched.
+    let alarmLogger = this.logger.child({ operation: 'alarm' }); // Initial logger
 
-    // Validate state to protect against corruption
-    const validatedState = SourceStateSchema.safeParse(state);
-    if (!validatedState.success) {
-      const logger = this.logger.child({ operation: 'alarm', validation_error: validatedState.error.format() });
-      logger.error('State validation failed. Cannot proceed with corrupted state.');
-      // Schedule a far-future alarm to prevent continuous failed attempts
-      await this.ctx.storage.setAlarm(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
-      return;
-    }
+    try {
+      const state = await this.ctx.storage.get<SourceState>('state');
+      if (state === undefined) {
+        this.logger.error('State not found in alarm. Cannot proceed.');
+        // Maybe schedule alarm far in the future or log an error to an external system
+        // We cannot proceed without state.
+        return;
+      }
 
-    const { sourceId, url, scrapeFrequencyTier } = validatedState.data;
-    const alarmLogger = this.logger.child({ operation: 'alarm', source_id: sourceId, url });
-    alarmLogger.info('Alarm triggered');
+      // Validate state to protect against corruption
+      const validatedState = SourceStateSchema.safeParse(state);
+      if (validatedState.success === false) {
+        const logger = this.logger.child({ operation: 'alarm', validation_error: validatedState.error.format() });
+        logger.error('State validation failed. Cannot proceed with corrupted state.');
+        // Schedule a far-future alarm to prevent continuous failed attempts
+        await this.ctx.storage.setAlarm(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+        return;
+      }
 
-    const interval = tierIntervals[scrapeFrequencyTier] || DEFAULT_INTERVAL;
+      const { sourceId, url, scrapeFrequencyTier } = validatedState.data;
+      const alarmLogger = this.logger.child({ operation: 'alarm', source_id: sourceId, url });
+      alarmLogger.info('Alarm triggered');
 
-    // --- Schedule the *next* regular alarm run immediately ---
-    // This ensures that even if this current run fails completely after all retries,
-    // the process will attempt again later according to its schedule.
-    const nextScheduledAlarmTime = Date.now() + interval;
-    await this.ctx.storage.setAlarm(nextScheduledAlarmTime);
-    alarmLogger.info('Next regular alarm scheduled', { next_alarm: new Date(nextScheduledAlarmTime).toISOString() });
+      const interval = tierIntervals[scrapeFrequencyTier] || DEFAULT_INTERVAL;
 
-    // --- Workflow Step 1: Fetch Feed with Retries ---
-    const fetchLogger = alarmLogger.child({ step: 'Fetch' });
-    const fetchResult = await attemptWithRetries(
-      async () => {
-        const respResult = await tryCatchAsync(
-          fetch(url, {
-            method: 'GET',
-            headers: {
-              'User-Agent': userAgents[Math.floor(Math.random() * userAgents.length)],
-              Referer: 'https://www.google.com/',
-            },
-          })
-        );
-        if (respResult.isErr()) return err(respResult.error as Error);
-        // Ensure response is OK before trying to read body
-        if (respResult.value.ok === false) {
-          return err(new Error(`Fetch failed with status: ${respResult.value.status} ${respResult.value.statusText}`));
+      // --- Schedule the *next* regular alarm run immediately ---
+      // This ensures that even if this current run fails completely after all retries,
+      // the process will attempt again later according to its schedule.
+      const nextScheduledAlarmTime = Date.now() + interval;
+      await this.ctx.storage.setAlarm(nextScheduledAlarmTime);
+      alarmLogger.info('Next regular alarm scheduled', { next_alarm: new Date(nextScheduledAlarmTime).toISOString() });
+
+      // --- Workflow Step 1: Fetch Feed with Retries ---
+      const fetchLogger = alarmLogger.child({ step: 'Fetch' });
+      const fetchResult = await attemptWithRetries(
+        async () => {
+          const respResult = await tryCatchAsync(
+            fetch(url, {
+              method: 'GET',
+              headers: {
+                'User-Agent': userAgents[Math.floor(Math.random() * userAgents.length)],
+                Referer: 'https://www.google.com/',
+              },
+            })
+          );
+          if (respResult.isErr()) return err(respResult.error as Error);
+          // Ensure response is OK before trying to read body
+          if (respResult.value.ok === false) {
+            return err(
+              new Error(`Fetch failed with status: ${respResult.value.status} ${respResult.value.statusText}`)
+            );
+          }
+          // Read body - this can also fail
+          const textResult = await tryCatchAsync(respResult.value.text());
+          if (textResult.isErr()) return err(textResult.error as Error);
+          return ok(textResult.value);
+        },
+        MAX_STEP_RETRIES,
+        INITIAL_RETRY_DELAY_MS,
+        fetchLogger
+      );
+      if (fetchResult.isErr()) {
+        // Error already logged by attemptWithRetries
+        return;
+      }
+      const feedText = fetchResult.value;
+
+      // --- Workflow Step 2: Parse Feed with Retries ---
+      const parseLogger = alarmLogger.child({ step: 'Parse' });
+      const parseResult = await attemptWithRetries(
+        async () => parseRSSFeed(feedText),
+        MAX_STEP_RETRIES,
+        INITIAL_RETRY_DELAY_MS,
+        parseLogger
+      );
+      if (parseResult.isErr()) {
+        // Error already logged by attemptWithRetries
+        return;
+      }
+      const articles = parseResult.value; // Type: ParsedArticle[]
+
+      // --- Filter Articles ---
+      const now = Date.now();
+
+      const newArticles = articles.map(article => ({
+        sourceId: sourceId,
+        url: article.link,
+        title: article.title,
+        publishDate: article.pubDate,
+      }));
+
+      if (newArticles.length === 0) {
+        alarmLogger.info('No new articles found worth inserting');
+
+        // Successfully processed, update lastChecked
+        validatedState.data.lastChecked = now;
+        await this.ctx.storage.put('state', validatedState.data);
+        alarmLogger.info('Updated lastChecked', { timestamp: new Date(now).toISOString() });
+        return;
+      }
+
+      alarmLogger.info('Found new articles to insert', { article_count: newArticles.length });
+
+      // --- Workflow Step 3: Insert Articles with Retries ---
+      const dbLogger = alarmLogger.child({ step: 'DB Insert' });
+      const insertResult = await attemptWithRetries(
+        async () =>
+          ResultAsync.fromPromise(
+            getDb(this.env.DATABASE_URL)
+              .insert($articles)
+              .values(newArticles)
+              .onConflictDoNothing({ target: $articles.url }) // Make sure 'url' is unique constraint name or column
+              .returning({ insertedId: $articles.id }),
+            e => (e instanceof Error ? e : new Error(`DB Insert failed: ${String(e)}`)) // Error mapper
+          ),
+        MAX_STEP_RETRIES,
+        INITIAL_RETRY_DELAY_MS,
+        dbLogger
+      );
+      if (insertResult.isErr()) {
+        // Error already logged by attemptWithRetries
+        return;
+      }
+
+      const insertedRows = insertResult.value; // Type: { insertedId: number }[]
+      dbLogger.info(`DB Insert completed`, { affected_rows: insertedRows.length });
+
+      // --- Send to Queue (No Retry here, relies on Queue's built-in retries/DLQ) ---
+      if (insertedRows.length > 0 && this.env.ARTICLE_PROCESSING_QUEUE) {
+        const insertedIds = insertedRows.map(r => r.insertedId);
+        const BATCH_SIZE_LIMIT = 100; // Adjust as needed
+
+        const queueLogger = alarmLogger.child({ step: 'Queue', total_ids: insertedIds.length });
+        queueLogger.info('Sending IDs to queue');
+
+        for (let i = 0; i < insertedIds.length; i += BATCH_SIZE_LIMIT) {
+          const batch = insertedIds.slice(i, i + BATCH_SIZE_LIMIT);
+          queueLogger.debug('Sending batch to queue', { batch_size: batch.length, batch_index: i / BATCH_SIZE_LIMIT });
+
+          this.ctx.waitUntil(
+            this.env.ARTICLE_PROCESSING_QUEUE.send({ articles_id: batch }).catch(queueError => {
+              queueLogger.error(
+                'Failed to send batch to queue',
+                { batch_index: i / BATCH_SIZE_LIMIT, batch_size: batch.length },
+                queueError instanceof Error ? queueError : new Error(String(queueError))
+              );
+            })
+          );
         }
-        // Read body - this can also fail
-        const textResult = await tryCatchAsync(respResult.value.text());
-        if (textResult.isErr()) return err(textResult.error as Error);
-        return ok(textResult.value);
-      },
-      MAX_STEP_RETRIES,
-      INITIAL_RETRY_DELAY_MS,
-      fetchLogger
-    );
-    if (fetchResult.isErr()) {
-      // Error already logged by attemptWithRetries
-      return;
-    }
-    const feedText = fetchResult.value;
+      }
 
-    // --- Workflow Step 2: Parse Feed with Retries ---
-    const parseLogger = alarmLogger.child({ step: 'Parse' });
-    const parseResult = await attemptWithRetries(
-      async () => parseRSSFeed(feedText),
-      MAX_STEP_RETRIES,
-      INITIAL_RETRY_DELAY_MS,
-      parseLogger
-    );
-    if (parseResult.isErr()) {
-      // Error already logged by attemptWithRetries
-      return;
-    }
-    const articles = parseResult.value; // Type: ParsedArticle[]
-
-    // --- Filter Articles ---
-    const now = Date.now();
-
-    const newArticles = articles.map(article => ({
-      sourceId: sourceId,
-      url: article.link,
-      title: article.title,
-      publishDate: article.pubDate,
-    }));
-
-    if (newArticles.length === 0) {
-      alarmLogger.info('No new articles found worth inserting');
-
-      // Successfully processed, update lastChecked
+      // --- Final Step: Update lastChecked only on full success ---
+      alarmLogger.info('All steps successful. Updating lastChecked');
       validatedState.data.lastChecked = now;
       await this.ctx.storage.put('state', validatedState.data);
       alarmLogger.info('Updated lastChecked', { timestamp: new Date(now).toISOString() });
-      return;
+    } catch (error) {
+      // Use the latest available logger instance (might be base or detailed)
+      const errorLogger = alarmLogger || this.logger;
+      errorLogger.error(
+        'Unhandled exception occurred within alarm handler',
+        { error_name: error instanceof Error ? error.name : 'UnknownError' },
+        error instanceof Error ? error : new Error(String(error)) // Log the error object/stack
+      );
     }
-
-    alarmLogger.info('Found new articles to insert', { article_count: newArticles.length });
-
-    // --- Workflow Step 3: Insert Articles with Retries ---
-    const dbLogger = alarmLogger.child({ step: 'DB Insert' });
-    const insertResult = await attemptWithRetries(
-      async () =>
-        ResultAsync.fromPromise(
-          getDb(this.env.DATABASE_URL)
-            .insert($articles)
-            .values(newArticles)
-            .onConflictDoNothing({ target: $articles.url }) // Make sure 'url' is unique constraint name or column
-            .returning({ insertedId: $articles.id }),
-          e => (e instanceof Error ? e : new Error(`DB Insert failed: ${String(e)}`)) // Error mapper
-        ),
-      MAX_STEP_RETRIES,
-      INITIAL_RETRY_DELAY_MS,
-      dbLogger
-    );
-    if (insertResult.isErr()) {
-      // Error already logged by attemptWithRetries
-      return;
-    }
-
-    const insertedRows = insertResult.value; // Type: { insertedId: number }[]
-    dbLogger.info(`DB Insert completed`, { affected_rows: insertedRows.length });
-
-    // --- Send to Queue (No Retry here, relies on Queue's built-in retries/DLQ) ---
-    if (insertedRows.length > 0 && this.env.ARTICLE_PROCESSING_QUEUE) {
-      const insertedIds = insertedRows.map(r => r.insertedId);
-      const BATCH_SIZE_LIMIT = 100; // Adjust as needed
-
-      const queueLogger = alarmLogger.child({ step: 'Queue', total_ids: insertedIds.length });
-      queueLogger.info('Sending IDs to queue');
-
-      for (let i = 0; i < insertedIds.length; i += BATCH_SIZE_LIMIT) {
-        const batch = insertedIds.slice(i, i + BATCH_SIZE_LIMIT);
-        queueLogger.debug('Sending batch to queue', { batch_size: batch.length, batch_index: i / BATCH_SIZE_LIMIT });
-
-        this.ctx.waitUntil(
-          this.env.ARTICLE_PROCESSING_QUEUE.send({ articles_id: batch }).catch(queueError => {
-            queueLogger.error(
-              'Failed to send batch to queue',
-              { batch_index: i / BATCH_SIZE_LIMIT, batch_size: batch.length },
-              queueError instanceof Error ? queueError : new Error(String(queueError))
-            );
-          })
-        );
-      }
-    }
-
-    // --- Final Step: Update lastChecked only on full success ---
-    alarmLogger.info('All steps successful. Updating lastChecked');
-    validatedState.data.lastChecked = now;
-    await this.ctx.storage.put('state', validatedState.data);
-    alarmLogger.info('Updated lastChecked', { timestamp: new Date(now).toISOString() });
   }
 
   /**

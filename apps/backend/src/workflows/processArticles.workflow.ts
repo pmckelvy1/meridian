@@ -245,7 +245,7 @@ export class ProcessArticles extends WorkflowEntrypoint<Env, ProcessArticlesPara
             { retries: { limit: 3, delay: '2 seconds', backoff: 'exponential' }, timeout: '1 minute' },
             async () => {
               const response = await generateObject({
-                model: google('gemini-2.0-flash'),
+                model: google('gemini-1.5-flash-8b-001'),
                 temperature: 0,
                 prompt: getArticleAnalysisPrompt(article.title, article.text),
                 schema: articleAnalysisSchema,
