@@ -68,7 +68,7 @@ def get_cycle_boundaries(dt: datetime) -> Tuple[datetime, datetime]:
 
 def get_events_for_cycle(cycle_start: datetime, cycle_end: datetime) -> Tuple[List[Any], List[Any]]:
     """Get events that occurred within the specified cycle."""
-    sources, events = get_events(cycle_end.isoformat())
+    sources, events = get_events(start_date=cycle_start.isoformat(), end_date=cycle_end.isoformat())
     # Filter events to only include those within the cycle
     cycle_events = [
         event for event in events
@@ -108,13 +108,14 @@ def generate_report():
         sources, events = get_events_for_cycle(cycle_start, cycle_end)
         
         # Check if there are any events
+        print(f"Found {len(events)} events for the specified time period")
         if not events:
             return jsonify({
                 "error": "No events found for the specified time period",
                 "cycle_start": cycle_start.isoformat(),
                 "cycle_end": cycle_end.isoformat()
             }), 404
-            
+
         # Process events into DataFrame
         articles_df = pd.DataFrame([{
             "id": event.id,

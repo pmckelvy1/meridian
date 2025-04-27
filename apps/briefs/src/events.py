@@ -46,14 +46,23 @@ class Event(BaseModel):
             return parser.parse(value)
 
 
-def get_events(date: str = None):
+def get_events(date: str = None, start_date: str = None, end_date: str = None):
     url = f"https://meridian-production.pmckelvy1.workers.dev/events"
 
+    # Build query parameters
+    params = {}
     if date:
-        url += f"?date={date}"
-    print(f"Fetching events from {url}")
+        params['date'] = date
+    elif start_date and end_date:
+        params['startDate'] = start_date
+        params['endDate'] = end_date
+    else:
+        raise ValueError("Either 'date' or both 'start_date' and 'end_date' must be provided")
+
+    print(f"Fetching events from {url} with params: {params}")
     response = requests.get(
         url,
+        params=params,
         headers={"Authorization": f"Bearer {os.environ.get('MERIDIAN_SECRET_KEY')}"},
     )
     data = response.json()

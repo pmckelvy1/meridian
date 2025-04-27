@@ -49,26 +49,45 @@ const app = new Hono<HonoEnv>()
       return c.json({ error: 'Unauthorized' }, 401);
     }
 
-    // Check if a date query parameter was provided in yyyy-mm-dd format
-    const dateParam = c.req.query('date');
+    // Check if date parameters were provided in ISO datetime format
+    const startDateParam = c.req.query('startDate');
+    const endDateParam = c.req.query('endDate');
+    const dateParam = c.req.query('date'); // Keep for backward compatibility
 
+    let startDate: Date;
     let endDate: Date;
+
     if (dateParam) {
-      // Parse the ISO datetime directly
+      // Backward compatibility: Use the old 30-hour window logic
       endDate = new Date(dateParam);
-      // Check if date is valid
       if (isNaN(endDate.getTime())) {
         return c.json({ error: 'Invalid date format. Please use ISO datetime format (e.g. YYYY-MM-DDTHH:mm:ss)' }, 400);
       }
-    } else {
-      // Use current date if no date parameter was provided
-      endDate = new Date();
-      // Set to 7am UTC today
+      // Set to 7am UTC on the specified date
       endDate.setUTCHours(7, 0, 0, 0);
+      // Create a 30-hour window
+      startDate = new Date(endDate.getTime() - 30 * 60 * 60 * 1000);
+    } else {
+      // New logic: Use provided start and end dates
+      if (!startDateParam || !endDateParam) {
+        return c.json(
+          { error: 'Both startDate and endDate parameters are required when not using the date parameter' },
+          400
+        );
+      }
+
+      startDate = new Date(startDateParam);
+      endDate = new Date(endDateParam);
+
+      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+        return c.json({ error: 'Invalid date format. Please use ISO datetime format (e.g. YYYY-MM-DDTHH:mm:ss)' }, 400);
+      }
+
+      if (startDate > endDate) {
+        return c.json({ error: 'startDate must be before endDate' }, 400);
+      }
     }
 
-    // Create a 30-hour window ending at 7am UTC on the specified date
-    const startDate = new Date(endDate.getTime() - 30 * 60 * 60 * 1000);
     console.log('db url', c.env.DATABASE_URL);
     const db = getDb(c.env.DATABASE_URL);
 
