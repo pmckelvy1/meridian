@@ -94,6 +94,42 @@ const route = new Hono<HonoEnv>()
       return c.json({ error: 'Failed to fetch report by date' }, 500);
     }
   })
+  .get('/cycle', async c => {
+    // check auth token
+    const hasValidToken = hasValidAuthToken(c);
+    if (!hasValidToken) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const cycleStart = c.req.query('cycle_start');
+    const cycleEnd = c.req.query('cycle_end');
+
+    if (!cycleStart || !cycleEnd) {
+      return c.json({ error: 'Both cycle_start and cycle_end parameters are required' }, 400);
+    }
+
+    try {
+      const startDate = new Date(cycleStart);
+      const endDate = new Date(cycleEnd);
+
+      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+        return c.json({ error: 'Invalid date format' }, 400);
+      }
+
+      const report = await getDb(c.env.DATABASE_URL).query.$reports.findFirst({
+        where: and(eq($reports.cycle_start, startDate), eq($reports.cycle_end, endDate)),
+      });
+
+      if (report === undefined) {
+        return c.json({ error: 'No report found for this cycle' }, 404);
+      }
+
+      return c.json(report);
+    } catch (error) {
+      console.error('Error fetching report by cycle', error);
+      return c.json({ error: 'Failed to fetch report by cycle' }, 500);
+    }
+  })
   .post(
     '/report',
     zValidator(
