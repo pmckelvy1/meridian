@@ -195,6 +195,14 @@ export class SourceScraperDO extends DurableObject<Env> {
   }
 
   /**
+   * Logs a simple hello message
+   */
+  sayHello() {
+    const logger = this.logger.child({ operation: 'sayHello' });
+    logger.info('Hello');
+  }
+
+  /**
    * Alarm handler that performs the scheduled RSS scraping
    *
    * This method is triggered by the DO alarm and:
