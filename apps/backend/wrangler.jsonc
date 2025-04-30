@@ -63,6 +63,13 @@
   "env": {
     "production": {
       "name": "meridian-backend-prod",
+      "migrations": [
+        {
+          "tag": "v1",
+          "new_classes": ["SourceScraperDO"],
+          "new_sqlite_classes": ["SourceScraperDO"],
+        },
+      ],
       "durable_objects": {
         "bindings": [
           {
