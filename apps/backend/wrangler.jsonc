@@ -20,6 +20,7 @@
     {
       "tag": "v1",
       "new_classes": ["SourceScraperDO"],
+      "new_sqlite_classes": ["SourceScraperDO"],
     },
   ],
   "queues": {
