@@ -73,8 +73,8 @@ importers:
         specifier: ^3.1.2
         version: 3.1.2(@types/node@22.14.1)(jiti@2.4.2)(jsdom@26.0.0)(lightningcss@1.29.2)(sass@1.85.1)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0)
       wrangler:
-        specifier: ^4.12.1
-        version: 4.13.0(@cloudflare/workers-types@4.20250423.0)
+        specifier: ^4.14.0
+        version: 4.14.0(@cloudflare/workers-types@4.20250423.0)
 
   apps/frontend:
     devDependencies:
@@ -119,7 +119,7 @@ importers:
         version: 3.0.0
       nuxt:
         specifier: ^3.16.2
-        version: 3.16.2(@biomejs/biome@1.7.2)(@electric-sql/pglite@0.2.17)(@parcel/watcher@2.5.1)(@types/node@22.14.1)(db0@0.3.1(@electric-sql/pglite@0.2.17)(drizzle-orm@0.42.0(@cloudflare/workers-types@4.20250423.0)(@electric-sql/pglite@0.2.17)(@opentelemetry/api@1.9.0)(bun-types@1.2.4)(gel@2.0.1)(postgres@3.4.5)))(drizzle-orm@0.42.0(@cloudflare/workers-types@4.20250423.0)(@electric-sql/pglite@0.2.17)(@opentelemetry/api@1.9.0)(bun-types@1.2.4)(gel@2.0.1)(postgres@3.4.5))(ioredis@5.6.0)(lightningcss@1.29.2)(magicast@0.3.5)(rollup@4.40.0)(sass@1.85.1)(terser@5.39.0)(tsx@4.19.3)(typescript@5.8.2)(vite@6.2.6(@types/node@22.14.1)(jiti@2.4.2)(lightningcss@1.29.2)(sass@1.85.1)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0))(vue-tsc@2.2.10(typescript@5.8.2))(yaml@2.7.0)
+        version: 3.16.2(@biomejs/biome@1.7.2)(@electric-sql/pglite@0.2.17)(@parcel/watcher@2.5.1)(@types/node@22.14.1)(db0@0.3.1(@electric-sql/pglite@0.2.17)(drizzle-orm@0.42.0(@cloudflare/workers-types@4.20250430.0)(@electric-sql/pglite@0.2.17)(@opentelemetry/api@1.9.0)(bun-types@1.2.4)(gel@2.0.1)(postgres@3.4.5)))(drizzle-orm@0.42.0(@cloudflare/workers-types@4.20250430.0)(@electric-sql/pglite@0.2.17)(@opentelemetry/api@1.9.0)(bun-types@1.2.4)(gel@2.0.1)(postgres@3.4.5))(ioredis@5.6.0)(lightningcss@1.29.2)(magicast@0.3.5)(rollup@4.40.0)(sass@1.85.1)(terser@5.39.0)(tsx@4.19.3)(typescript@5.8.2)(vite@6.2.6(@types/node@22.14.1)(jiti@2.4.2)(lightningcss@1.29.2)(sass@1.85.1)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0))(vue-tsc@2.2.10(typescript@5.8.2))(yaml@2.7.0)
       nuxt-auth-utils:
         specifier: 0.5.20
         version: 0.5.20(magicast@0.3.5)
@@ -137,7 +137,7 @@ importers:
         version: 2.2.10(typescript@5.8.2)
       wrangler:
         specifier: ^4.13.0
-        version: 4.13.0(@cloudflare/workers-types@4.20250423.0)
+        version: 4.13.0(@cloudflare/workers-types@4.20250430.0)
       zod:
         specifier: ^3.24.3
         version: 3.24.3
@@ -146,7 +146,7 @@ importers:
     dependencies:
       drizzle-orm:
         specifier: ^0.42.0
-        version: 0.42.0(@cloudflare/workers-types@4.20250423.0)(@electric-sql/pglite@0.2.17)(@opentelemetry/api@1.9.0)(bun-types@1.2.4)(gel@2.0.1)(postgres@3.4.5)
+        version: 0.42.0(@cloudflare/workers-types@4.20250430.0)(@electric-sql/pglite@0.2.17)(@opentelemetry/api@1.9.0)(bun-types@1.2.4)(gel@2.0.1)(postgres@3.4.5)
       postgres:
         specifier: ^3.4.5
         version: 3.4.5
@@ -422,6 +422,12 @@ packages:
     cpu: [x64]
     os: [darwin]
 
+  '@cloudflare/workerd-darwin-64@1.20250428.0':
+    resolution: {integrity: sha512-6nVe9oV4Hdec6ctzMtW80TiDvNTd2oFPi3VsKqSDVaJSJbL+4b6seyJ7G/UEPI+si6JhHBSLV2/9lNXNGLjClA==}
+    engines: {node: '>=16'}
+    cpu: [x64]
+    os: [darwin]
+
   '@cloudflare/workerd-darwin-arm64@1.20250417.0':
     resolution: {integrity: sha512-dSlk18F4i3T1OTzFBxx3pKpXRMP6w2xZ26+oIV32BFWrCi/HxGzUd6gVA0q37oLGqITRt8xU693J4Gl1CwC/Ag==}
     engines: {node: '>=16'}
@@ -430,6 +436,12 @@ packages:
 
   '@cloudflare/workerd-darwin-arm64@1.20250422.0':
     resolution: {integrity: sha512-GY3W74ivqxsYldacEbMtcSbG7LsS9hPo5UybKIw4RO9GzP7UC5WGnPfuI4PE2SnJOnw7nwSrBLuhGRPe/QQHkQ==}
+    engines: {node: '>=16'}
+    cpu: [arm64]
+    os: [darwin]
+
+  '@cloudflare/workerd-darwin-arm64@1.20250428.0':
+    resolution: {integrity: sha512-/TB7bh7SIJ5f+6r4PHsAz7+9Qal/TK1cJuKFkUno1kqGlZbdrMwH0ATYwlWC/nBFeu2FB3NUolsTntEuy23hnQ==}
     engines: {node: '>=16'}
     cpu: [arm64]
     os: [darwin]
@@ -446,6 +458,12 @@ packages:
     cpu: [x64]
     os: [linux]
 
+  '@cloudflare/workerd-linux-64@1.20250428.0':
+    resolution: {integrity: sha512-9eCbj+R3CKqpiXP6DfAA20DxKge+OTj7Hyw3ZewiEhWH9INIHiJwJQYybu4iq9kJEGjnGvxgguLFjSCWm26hgg==}
+    engines: {node: '>=16'}
+    cpu: [x64]
+    os: [linux]
+
   '@cloudflare/workerd-linux-arm64@1.20250417.0':
     resolution: {integrity: sha512-34qBk0htAXmUneOTQxW6/g6pjNVR91r0vJzz2FID84cAIOYVl4hZLijkjmVl+MMDU6boXUs+yDwhItdg06YvAg==}
     engines: {node: '>=16'}
@@ -454,6 +472,12 @@ packages:
 
   '@cloudflare/workerd-linux-arm64@1.20250422.0':
     resolution: {integrity: sha512-ILlW4/kAoFJvSryrr/QJsiHBdMTf/fjUrIM0hxeuQue8zIEvAVqM1tzpUh8bPJT6AQEbk5ziwkfucA939Z6Tnw==}
+    engines: {node: '>=16'}
+    cpu: [arm64]
+    os: [linux]
+
+  '@cloudflare/workerd-linux-arm64@1.20250428.0':
+    resolution: {integrity: sha512-D9NRBnW46nl1EQsP13qfkYb5lbt4C6nxl38SBKY/NOcZAUoHzNB5K0GaK8LxvpkM7X/97ySojlMfR5jh5DNXYQ==}
     engines: {node: '>=16'}
     cpu: [arm64]
     os: [linux]
@@ -470,8 +494,17 @@ packages:
     cpu: [x64]
     os: [win32]
 
+  '@cloudflare/workerd-windows-64@1.20250428.0':
+    resolution: {integrity: sha512-RQCRj28eitjKD0tmei6iFOuWqMuHMHdNGEigRmbkmuTlpbWHNAoHikgCzZQ/dkKDdatA76TmcpbyECNf31oaTA==}
+    engines: {node: '>=16'}
+    cpu: [x64]
+    os: [win32]
+
   '@cloudflare/workers-types@4.20250423.0':
     resolution: {integrity: sha512-uzy7fvgYIs9YCEaPScC+RnZvd+yJJCqLCEe/n/6p2PZTxWbDmiZjtJQiP5Zx6G0p64ZD/0ZRmtALfDZDNYBDHg==}
+
+  '@cloudflare/workers-types@4.20250430.0':
+    resolution: {integrity: sha512-JWAX7ZhQ7KjkdJwASgG58MZ/pQ15brlnZ9/0YBwDQ0hrJ/LaK392aTRFlj2r/PRKDZ5dOuujRywNYaNpfeFiEA==}
 
   '@cspotcode/source-map-support@0.8.1':
     resolution: {integrity: sha512-IchNf6dN4tHoMFIn/7OE8LWZ19Y6q/67Bmf6vnGREv8RSbBVb9LPJxEcnwrcwX6ixSvaiGoomAUvu4YSxXrVgw==}
@@ -3274,6 +3307,11 @@ packages:
     engines: {node: '>=18.0.0'}
     hasBin: true
 
+  miniflare@4.20250428.0:
+    resolution: {integrity: sha512-3kKJNcdh5zUSXoFD3kGSRWc+ETZS36O7ygkCJJF/bwN7lxcB5mOXq+2DPqV/nVyu2DGLDAqsAvjXhpPKCHuPOQ==}
+    engines: {node: '>=18.0.0'}
+    hasBin: true
+
   minimatch@5.1.6:
     resolution: {integrity: sha512-lKwV/1brpG6mBUFHtb7NUmtABCb2WZZmm2wNiOA5hAb8VdCS4B3dtMWyvcoViccwAW/COERjXLt0zP1zXUN26g==}
     engines: {node: '>=10'}
@@ -4711,6 +4749,11 @@ packages:
     engines: {node: '>=16'}
     hasBin: true
 
+  workerd@1.20250428.0:
+    resolution: {integrity: sha512-JJNWkHkwPQKQdvtM9UORijgYdcdJsihA4SfYjwh02IUQsdMyZ9jizV1sX9yWi9B9ptlohTW8UNHJEATuphGgdg==}
+    engines: {node: '>=16'}
+    hasBin: true
+
   workers-og@0.0.25:
     resolution: {integrity: sha512-OkTyqCkUCUpGHwMwGmVCMtFPUASf9oBEiCYyOVMBDnUidTQt7AwvDx5EIuCMuQELUGm/tIyvvC8OU/hBsxlBUw==}
 
@@ -4730,6 +4773,16 @@ packages:
     hasBin: true
     peerDependencies:
       '@cloudflare/workers-types': ^4.20250422.0
+    peerDependenciesMeta:
+      '@cloudflare/workers-types':
+        optional: true
+
+  wrangler@4.14.0:
+    resolution: {integrity: sha512-WhypgOBEYuUMo/ZFw8MgZ0wtyE7EmDanytjD8Me+OMm62raKU9V9DZTlF1UVLkNfilfQNlRbMnFRdzSBji/MEA==}
+    engines: {node: '>=18.0.0'}
+    hasBin: true
+    peerDependencies:
+      '@cloudflare/workers-types': ^4.20250428.0
     peerDependenciesMeta:
       '@cloudflare/workers-types':
         optional: true
@@ -5131,6 +5184,12 @@ snapshots:
     optionalDependencies:
       workerd: 1.20250422.0
 
+  '@cloudflare/unenv-preset@2.3.1(unenv@2.0.0-rc.15)(workerd@1.20250428.0)':
+    dependencies:
+      unenv: 2.0.0-rc.15
+    optionalDependencies:
+      workerd: 1.20250428.0
+
   '@cloudflare/vitest-pool-workers@0.8.19(@cloudflare/workers-types@4.20250423.0)(@vitest/runner@3.1.2)(@vitest/snapshot@3.1.2)(vitest@3.1.2(@types/node@22.14.1)(jiti@2.4.2)(jsdom@26.0.0)(lightningcss@1.29.2)(sass@1.85.1)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0))':
     dependencies:
       '@vitest/runner': 3.1.2
@@ -5154,10 +5213,16 @@ snapshots:
   '@cloudflare/workerd-darwin-64@1.20250422.0':
     optional: true
 
+  '@cloudflare/workerd-darwin-64@1.20250428.0':
+    optional: true
+
   '@cloudflare/workerd-darwin-arm64@1.20250417.0':
     optional: true
 
   '@cloudflare/workerd-darwin-arm64@1.20250422.0':
+    optional: true
+
+  '@cloudflare/workerd-darwin-arm64@1.20250428.0':
     optional: true
 
   '@cloudflare/workerd-linux-64@1.20250417.0':
@@ -5166,10 +5231,16 @@ snapshots:
   '@cloudflare/workerd-linux-64@1.20250422.0':
     optional: true
 
+  '@cloudflare/workerd-linux-64@1.20250428.0':
+    optional: true
+
   '@cloudflare/workerd-linux-arm64@1.20250417.0':
     optional: true
 
   '@cloudflare/workerd-linux-arm64@1.20250422.0':
+    optional: true
+
+  '@cloudflare/workerd-linux-arm64@1.20250428.0':
     optional: true
 
   '@cloudflare/workerd-windows-64@1.20250417.0':
@@ -5178,7 +5249,13 @@ snapshots:
   '@cloudflare/workerd-windows-64@1.20250422.0':
     optional: true
 
+  '@cloudflare/workerd-windows-64@1.20250428.0':
+    optional: true
+
   '@cloudflare/workers-types@4.20250423.0': {}
+
+  '@cloudflare/workers-types@4.20250430.0':
+    optional: true
 
   '@cspotcode/source-map-support@0.8.1':
     dependencies:
@@ -6967,10 +7044,10 @@ snapshots:
       whatwg-url: 14.1.1
     optional: true
 
-  db0@0.3.1(@electric-sql/pglite@0.2.17)(drizzle-orm@0.42.0(@cloudflare/workers-types@4.20250423.0)(@electric-sql/pglite@0.2.17)(@opentelemetry/api@1.9.0)(bun-types@1.2.4)(gel@2.0.1)(postgres@3.4.5)):
+  db0@0.3.1(@electric-sql/pglite@0.2.17)(drizzle-orm@0.42.0(@cloudflare/workers-types@4.20250430.0)(@electric-sql/pglite@0.2.17)(@opentelemetry/api@1.9.0)(bun-types@1.2.4)(gel@2.0.1)(postgres@3.4.5)):
     optionalDependencies:
       '@electric-sql/pglite': 0.2.17
-      drizzle-orm: 0.42.0(@cloudflare/workers-types@4.20250423.0)(@electric-sql/pglite@0.2.17)(@opentelemetry/api@1.9.0)(bun-types@1.2.4)(gel@2.0.1)(postgres@3.4.5)
+      drizzle-orm: 0.42.0(@cloudflare/workers-types@4.20250430.0)(@electric-sql/pglite@0.2.17)(@opentelemetry/api@1.9.0)(bun-types@1.2.4)(gel@2.0.1)(postgres@3.4.5)
 
   de-indent@1.0.2: {}
 
@@ -7067,9 +7144,9 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  drizzle-orm@0.42.0(@cloudflare/workers-types@4.20250423.0)(@electric-sql/pglite@0.2.17)(@opentelemetry/api@1.9.0)(bun-types@1.2.4)(gel@2.0.1)(postgres@3.4.5):
+  drizzle-orm@0.42.0(@cloudflare/workers-types@4.20250430.0)(@electric-sql/pglite@0.2.17)(@opentelemetry/api@1.9.0)(bun-types@1.2.4)(gel@2.0.1)(postgres@3.4.5):
     optionalDependencies:
-      '@cloudflare/workers-types': 4.20250423.0
+      '@cloudflare/workers-types': 4.20250430.0
       '@electric-sql/pglite': 0.2.17
       '@opentelemetry/api': 1.9.0
       bun-types: 1.2.4
@@ -7929,6 +8006,23 @@ snapshots:
       - bufferutil
       - utf-8-validate
 
+  miniflare@4.20250428.0:
+    dependencies:
+      '@cspotcode/source-map-support': 0.8.1
+      acorn: 8.14.0
+      acorn-walk: 8.3.2
+      exit-hook: 2.2.1
+      glob-to-regexp: 0.4.1
+      stoppable: 1.1.0
+      undici: 5.28.5
+      workerd: 1.20250428.0
+      ws: 8.18.0
+      youch: 3.3.4
+      zod: 3.22.3
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
+
   minimatch@5.1.6:
     dependencies:
       brace-expansion: 2.0.1
@@ -7979,7 +8073,7 @@ snapshots:
     optionalDependencies:
       '@rollup/rollup-linux-x64-gnu': 4.40.0
 
-  nitropack@2.11.9(@electric-sql/pglite@0.2.17)(drizzle-orm@0.42.0(@cloudflare/workers-types@4.20250423.0)(@electric-sql/pglite@0.2.17)(@opentelemetry/api@1.9.0)(bun-types@1.2.4)(gel@2.0.1)(postgres@3.4.5)):
+  nitropack@2.11.9(@electric-sql/pglite@0.2.17)(drizzle-orm@0.42.0(@cloudflare/workers-types@4.20250430.0)(@electric-sql/pglite@0.2.17)(@opentelemetry/api@1.9.0)(bun-types@1.2.4)(gel@2.0.1)(postgres@3.4.5)):
     dependencies:
       '@cloudflare/kv-asset-handler': 0.4.0
       '@netlify/functions': 3.0.4
@@ -8001,7 +8095,7 @@ snapshots:
       cookie-es: 2.0.0
       croner: 9.0.0
       crossws: 0.3.4
-      db0: 0.3.1(@electric-sql/pglite@0.2.17)(drizzle-orm@0.42.0(@cloudflare/workers-types@4.20250423.0)(@electric-sql/pglite@0.2.17)(@opentelemetry/api@1.9.0)(bun-types@1.2.4)(gel@2.0.1)(postgres@3.4.5))
+      db0: 0.3.1(@electric-sql/pglite@0.2.17)(drizzle-orm@0.42.0(@cloudflare/workers-types@4.20250430.0)(@electric-sql/pglite@0.2.17)(@opentelemetry/api@1.9.0)(bun-types@1.2.4)(gel@2.0.1)(postgres@3.4.5))
       defu: 6.1.4
       destr: 2.0.5
       dot-prop: 9.0.0
@@ -8047,7 +8141,7 @@ snapshots:
       unenv: 2.0.0-rc.15
       unimport: 5.0.0
       unplugin-utils: 0.2.4
-      unstorage: 1.15.0(db0@0.3.1(@electric-sql/pglite@0.2.17)(drizzle-orm@0.42.0(@cloudflare/workers-types@4.20250423.0)(@electric-sql/pglite@0.2.17)(@opentelemetry/api@1.9.0)(bun-types@1.2.4)(gel@2.0.1)(postgres@3.4.5)))(ioredis@5.6.0)
+      unstorage: 1.15.0(db0@0.3.1(@electric-sql/pglite@0.2.17)(drizzle-orm@0.42.0(@cloudflare/workers-types@4.20250430.0)(@electric-sql/pglite@0.2.17)(@opentelemetry/api@1.9.0)(bun-types@1.2.4)(gel@2.0.1)(postgres@3.4.5)))(ioredis@5.6.0)
       untyped: 2.0.0
       unwasm: 0.3.9
       youch: 4.1.0-beta.7
@@ -8134,7 +8228,7 @@ snapshots:
       - bcrypt
       - magicast
 
-  nuxt@3.16.2(@biomejs/biome@1.7.2)(@electric-sql/pglite@0.2.17)(@parcel/watcher@2.5.1)(@types/node@22.14.1)(db0@0.3.1(@electric-sql/pglite@0.2.17)(drizzle-orm@0.42.0(@cloudflare/workers-types@4.20250423.0)(@electric-sql/pglite@0.2.17)(@opentelemetry/api@1.9.0)(bun-types@1.2.4)(gel@2.0.1)(postgres@3.4.5)))(drizzle-orm@0.42.0(@cloudflare/workers-types@4.20250423.0)(@electric-sql/pglite@0.2.17)(@opentelemetry/api@1.9.0)(bun-types@1.2.4)(gel@2.0.1)(postgres@3.4.5))(ioredis@5.6.0)(lightningcss@1.29.2)(magicast@0.3.5)(rollup@4.40.0)(sass@1.85.1)(terser@5.39.0)(tsx@4.19.3)(typescript@5.8.2)(vite@6.2.6(@types/node@22.14.1)(jiti@2.4.2)(lightningcss@1.29.2)(sass@1.85.1)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0))(vue-tsc@2.2.10(typescript@5.8.2))(yaml@2.7.0):
+  nuxt@3.16.2(@biomejs/biome@1.7.2)(@electric-sql/pglite@0.2.17)(@parcel/watcher@2.5.1)(@types/node@22.14.1)(db0@0.3.1(@electric-sql/pglite@0.2.17)(drizzle-orm@0.42.0(@cloudflare/workers-types@4.20250430.0)(@electric-sql/pglite@0.2.17)(@opentelemetry/api@1.9.0)(bun-types@1.2.4)(gel@2.0.1)(postgres@3.4.5)))(drizzle-orm@0.42.0(@cloudflare/workers-types@4.20250430.0)(@electric-sql/pglite@0.2.17)(@opentelemetry/api@1.9.0)(bun-types@1.2.4)(gel@2.0.1)(postgres@3.4.5))(ioredis@5.6.0)(lightningcss@1.29.2)(magicast@0.3.5)(rollup@4.40.0)(sass@1.85.1)(terser@5.39.0)(tsx@4.19.3)(typescript@5.8.2)(vite@6.2.6(@types/node@22.14.1)(jiti@2.4.2)(lightningcss@1.29.2)(sass@1.85.1)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0))(vue-tsc@2.2.10(typescript@5.8.2))(yaml@2.7.0):
     dependencies:
       '@nuxt/cli': 3.24.1(magicast@0.3.5)
       '@nuxt/devalue': 2.0.2
@@ -8171,7 +8265,7 @@ snapshots:
       mlly: 1.7.4
       mocked-exports: 0.1.1
       nanotar: 0.2.0
-      nitropack: 2.11.9(@electric-sql/pglite@0.2.17)(drizzle-orm@0.42.0(@cloudflare/workers-types@4.20250423.0)(@electric-sql/pglite@0.2.17)(@opentelemetry/api@1.9.0)(bun-types@1.2.4)(gel@2.0.1)(postgres@3.4.5))
+      nitropack: 2.11.9(@electric-sql/pglite@0.2.17)(drizzle-orm@0.42.0(@cloudflare/workers-types@4.20250430.0)(@electric-sql/pglite@0.2.17)(@opentelemetry/api@1.9.0)(bun-types@1.2.4)(gel@2.0.1)(postgres@3.4.5))
       nypm: 0.6.0
       ofetch: 1.4.1
       ohash: 2.0.11
@@ -8193,7 +8287,7 @@ snapshots:
       unimport: 4.2.0
       unplugin: 2.3.2
       unplugin-vue-router: 0.12.0(vue-router@4.5.0(vue@3.5.13(typescript@5.8.2)))(vue@3.5.13(typescript@5.8.2))
-      unstorage: 1.15.0(db0@0.3.1(@electric-sql/pglite@0.2.17)(drizzle-orm@0.42.0(@cloudflare/workers-types@4.20250423.0)(@electric-sql/pglite@0.2.17)(@opentelemetry/api@1.9.0)(bun-types@1.2.4)(gel@2.0.1)(postgres@3.4.5)))(ioredis@5.6.0)
+      unstorage: 1.15.0(db0@0.3.1(@electric-sql/pglite@0.2.17)(drizzle-orm@0.42.0(@cloudflare/workers-types@4.20250430.0)(@electric-sql/pglite@0.2.17)(@opentelemetry/api@1.9.0)(bun-types@1.2.4)(gel@2.0.1)(postgres@3.4.5)))(ioredis@5.6.0)
       untyped: 2.0.0
       vue: 3.5.13(typescript@5.8.2)
       vue-bundle-renderer: 2.1.1
@@ -9313,7 +9407,7 @@ snapshots:
       picomatch: 4.0.2
       webpack-virtual-modules: 0.6.2
 
-  unstorage@1.15.0(db0@0.3.1(@electric-sql/pglite@0.2.17)(drizzle-orm@0.42.0(@cloudflare/workers-types@4.20250423.0)(@electric-sql/pglite@0.2.17)(@opentelemetry/api@1.9.0)(bun-types@1.2.4)(gel@2.0.1)(postgres@3.4.5)))(ioredis@5.6.0):
+  unstorage@1.15.0(db0@0.3.1(@electric-sql/pglite@0.2.17)(drizzle-orm@0.42.0(@cloudflare/workers-types@4.20250430.0)(@electric-sql/pglite@0.2.17)(@opentelemetry/api@1.9.0)(bun-types@1.2.4)(gel@2.0.1)(postgres@3.4.5)))(ioredis@5.6.0):
     dependencies:
       anymatch: 3.1.3
       chokidar: 4.0.3
@@ -9324,7 +9418,7 @@ snapshots:
       ofetch: 1.4.1
       ufo: 1.6.1
     optionalDependencies:
-      db0: 0.3.1(@electric-sql/pglite@0.2.17)(drizzle-orm@0.42.0(@cloudflare/workers-types@4.20250423.0)(@electric-sql/pglite@0.2.17)(@opentelemetry/api@1.9.0)(bun-types@1.2.4)(gel@2.0.1)(postgres@3.4.5))
+      db0: 0.3.1(@electric-sql/pglite@0.2.17)(drizzle-orm@0.42.0(@cloudflare/workers-types@4.20250430.0)(@electric-sql/pglite@0.2.17)(@opentelemetry/api@1.9.0)(bun-types@1.2.4)(gel@2.0.1)(postgres@3.4.5))
       ioredis: 5.6.0
 
   untun@0.1.3:
@@ -9613,6 +9707,14 @@ snapshots:
       '@cloudflare/workerd-linux-arm64': 1.20250422.0
       '@cloudflare/workerd-windows-64': 1.20250422.0
 
+  workerd@1.20250428.0:
+    optionalDependencies:
+      '@cloudflare/workerd-darwin-64': 1.20250428.0
+      '@cloudflare/workerd-darwin-arm64': 1.20250428.0
+      '@cloudflare/workerd-linux-64': 1.20250428.0
+      '@cloudflare/workerd-linux-arm64': 1.20250428.0
+      '@cloudflare/workerd-windows-64': 1.20250428.0
+
   workers-og@0.0.25:
     dependencies:
       '@resvg/resvg-wasm': 2.6.2
@@ -9638,7 +9740,7 @@ snapshots:
       - bufferutil
       - utf-8-validate
 
-  wrangler@4.13.0(@cloudflare/workers-types@4.20250423.0):
+  wrangler@4.13.0(@cloudflare/workers-types@4.20250430.0):
     dependencies:
       '@cloudflare/kv-asset-handler': 0.4.0
       '@cloudflare/unenv-preset': 2.3.1(unenv@2.0.0-rc.15)(workerd@1.20250422.0)
@@ -9648,6 +9750,24 @@ snapshots:
       path-to-regexp: 6.3.0
       unenv: 2.0.0-rc.15
       workerd: 1.20250422.0
+    optionalDependencies:
+      '@cloudflare/workers-types': 4.20250430.0
+      fsevents: 2.3.3
+      sharp: 0.33.5
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
+
+  wrangler@4.14.0(@cloudflare/workers-types@4.20250423.0):
+    dependencies:
+      '@cloudflare/kv-asset-handler': 0.4.0
+      '@cloudflare/unenv-preset': 2.3.1(unenv@2.0.0-rc.15)(workerd@1.20250428.0)
+      blake3-wasm: 2.1.5
+      esbuild: 0.25.2
+      miniflare: 4.20250428.0
+      path-to-regexp: 6.3.0
+      unenv: 2.0.0-rc.15
+      workerd: 1.20250428.0
     optionalDependencies:
       '@cloudflare/workers-types': 4.20250423.0
       fsevents: 2.3.3

@@ -77,12 +77,11 @@ const route = new Hono<HonoEnv>()
       const stub = c.env.SOURCE_SCRAPER.get(doId);
 
       const initResult = await tryCatchAsync(
-        // stub.initialize({
-        //   id: source.id,
-        //   url: source.url,
-        //   scrape_frequency: source.scrape_frequency,
-        // })
-        stub.sayHello()
+        stub.initialize({
+          id: source.id,
+          url: source.url,
+          scrape_frequency: source.scrape_frequency,
+        })
       );
       if (initResult.isErr()) {
         const error = initResult.error instanceof Error ? initResult.error : new Error(String(initResult.error));
