@@ -111,6 +111,30 @@ const viewAnalysis = (article: Article) => {
 watch([currentPage, statusFilter, completenessFilter, qualityFilter, sortBy, sortOrder], () => {
   refresh();
 });
+
+async function initDOs() {
+  await $fetch(`/api/admin/sources/${sourceId}/init-dos`, {
+    method: 'POST',
+  });
+}
+
+// Add delete functionality
+async function deleteSource() {
+  if (!confirm('Are you sure you want to delete this source? This action cannot be undone.')) {
+    return;
+  }
+
+  try {
+    await $fetch(`/api/admin/sources/${sourceId}`, {
+      method: 'DELETE',
+    });
+    // Redirect back to sources list after successful deletion
+    await navigateTo('/admin');
+  } catch (error) {
+    console.error('Failed to delete source:', error);
+    alert('Failed to delete source. Please try again.');
+  }
+}
 </script>
 
 <template>
@@ -124,7 +148,24 @@ watch([currentPage, statusFilter, completenessFilter, qualityFilter, sortBy, sor
     <div v-if="feedDetails" class="space-y-4">
       <!-- Source Info -->
       <div class="bg-white rounded-lg border p-4">
-        <h1 class="text-xl font-medium text-gray-900 mb-3">{{ feedDetails.name }}</h1>
+        <div class="flex justify-between items-start mb-3">
+          <h1 class="text-xl font-medium text-gray-900">{{ feedDetails.name }}</h1>
+          <div class="flex gap-2">
+            <button
+              v-if="feedDetails.initialized === false"
+              class="border bg-red-500 px-4 py-2 rounded hover:cursor-pointer hover:bg-red-600 text-white"
+              @click="initDOs"
+            >
+              Init DOs
+            </button>
+            <button
+              class="border bg-red-500 px-4 py-2 rounded hover:cursor-pointer hover:bg-red-600 text-white"
+              @click="deleteSource"
+            >
+              Delete Source
+            </button>
+          </div>
+        </div>
         <div class="grid grid-cols-2 gap-3 text-sm">
           <div>
             <span class="text-gray-500">Source URL:</span>

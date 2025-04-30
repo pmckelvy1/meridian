@@ -1,4 +1,6 @@
 <script lang="ts" setup>
+import { z } from 'zod';
+
 definePageMeta({ layout: 'admin' });
 
 const { data: sources, error: sourcesError } = await useFetch('/api/admin/sources');
@@ -13,6 +15,8 @@ if (sourcesError.value) {
 }
 
 type Source = NonNullable<typeof sources.value>[number];
+
+const config = useRuntimeConfig();
 
 const sortKey = ref<keyof Source | ''>('');
 const sortOrder = ref<'asc' | 'desc'>('asc');
@@ -133,12 +137,40 @@ const formatDate = (dateStr: string) => {
   const s = String(date.getSeconds()).padStart(2, '0');
   return `${Y}-${M}-${D} ${h}:${m}:${s}`;
 };
+
+async function addSource() {
+  const url = prompt('Enter the URL of the source you want to add');
+  if (!url) return;
+
+  const urlSchema = z.string().url();
+  const result = urlSchema.safeParse(url);
+  if (!result.success) {
+    alert('Invalid URL');
+    return;
+  }
+
+  try {
+    await $fetch('/api/admin/sources', {
+      method: 'POST',
+      body: { url },
+    });
+    alert('Source added successfully');
+  } catch (error) {
+    console.error(sourcesError.value);
+    throw createError({ statusCode: 500, statusMessage: 'Failed to fetch sources' });
+  }
+}
 </script>
 
 <template>
   <div>
-    <div class="flex justify-between items-center">
-      <h1 class="text-xl font-medium text-gray-900 mb-6">Source Analytics</h1>
+    <div class="flex justify-between items-center mb-6">
+      <h1 class="text-xl font-medium text-gray-900">Source Analytics</h1>
+
+      <!-- button to add a new source -->
+      <button @click="addSource" class="border px-4 py-2 rounded hover:cursor-pointer hover:bg-gray-100">
+        Add Source
+      </button>
     </div>
 
     <div class="grid grid-cols-4 gap-4 mb-6">

@@ -82,6 +82,7 @@ export default defineEventHandler(async event => {
     id: source.id,
     name: source.name,
     url: source.url,
+    initialized: source.do_initialized_at !== null,
     frequency:
       source.scrape_frequency === 1
         ? 'Hourly'

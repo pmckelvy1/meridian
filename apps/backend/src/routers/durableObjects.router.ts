@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { HonoEnv } from '../app';
-import { $sources, getDb } from '@meridian/database';
+import { $articles, $sources, getDb, eq, isNotNull } from '@meridian/database';
 import { hasValidAuthToken } from '../lib/utils';
 import { z } from 'zod';
 import { zValidator } from '@hono/zod-validator';
@@ -35,6 +35,80 @@ const route = new Hono<HonoEnv>()
     }
   )
   // admin endpoints
+  .delete(
+    '/admin/source/:sourceId',
+    zValidator(
+      'param',
+      z.object({
+        sourceId: z.string().min(1, 'Source ID is required'),
+      })
+    ),
+    async c => {
+      // auth check
+      if (!hasValidAuthToken(c)) {
+        return c.json({ error: 'Unauthorized' }, 401);
+      }
+
+      const deleteLogger = logger.child({ operation: 'delete-source' });
+      const { sourceId } = c.req.valid('param');
+
+      const db = getDb(c.env.DATABASE_URL);
+
+      // Get the source first to get its URL
+      const sourceResult = await tryCatchAsync(
+        db.query.$sources.findFirst({
+          where: eq($sources.id, Number(sourceId)),
+        })
+      );
+
+      if (sourceResult.isErr()) {
+        const error = sourceResult.error instanceof Error ? sourceResult.error : new Error(String(sourceResult.error));
+        deleteLogger.error('Failed to fetch source', { sourceId }, error);
+        return c.json({ error: 'Failed to fetch source' }, 500);
+      }
+
+      const source = sourceResult.value;
+      if (!source) {
+        return c.json({ error: 'Source not found' }, 404);
+      }
+
+      // Delete the durable object first
+      const doId = c.env.SOURCE_SCRAPER.idFromName(source.url);
+      const stub = c.env.SOURCE_SCRAPER.get(doId);
+
+      const deleteResult = await tryCatchAsync(
+        stub.fetch('http://do/delete', {
+          method: 'DELETE',
+        })
+      );
+      if (deleteResult.isErr()) {
+        const error = deleteResult.error instanceof Error ? deleteResult.error : new Error(String(deleteResult.error));
+        deleteLogger.error('Failed to delete source DO', { sourceId, url: source.url }, error);
+        return c.json({ error: 'Failed to delete source DO' }, 500);
+      }
+
+      // Then delete from database
+      // delete the articles first
+      const articlesResult = await tryCatchAsync(db.delete($articles).where(eq($articles.sourceId, Number(sourceId))));
+      if (articlesResult.isErr()) {
+        const error =
+          articlesResult.error instanceof Error ? articlesResult.error : new Error(String(articlesResult.error));
+        deleteLogger.error('Failed to delete articles', { sourceId }, error);
+        return c.json({ error: 'Failed to delete articles' }, 500);
+      }
+
+      const dbDeleteResult = await tryCatchAsync(db.delete($sources).where(eq($sources.id, Number(sourceId))));
+      if (dbDeleteResult.isErr()) {
+        const error =
+          dbDeleteResult.error instanceof Error ? dbDeleteResult.error : new Error(String(dbDeleteResult.error));
+        deleteLogger.error('Failed to delete source from database', { sourceId }, error);
+        return c.json({ error: 'Failed to delete source from database' }, 500);
+      }
+
+      deleteLogger.info('Successfully deleted source', { sourceId, url: source.url });
+      return c.json({ success: true });
+    }
+  )
   .post('/admin/initialize-dos', async c => {
     // auth check
     if (!hasValidAuthToken(c)) {
@@ -58,6 +132,7 @@ const route = new Hono<HonoEnv>()
           scrape_frequency: $sources.scrape_frequency,
         })
         .from($sources)
+        .where(isNotNull($sources.do_initialized_at))
     );
     if (allSourcesResult.isErr()) {
       const error =

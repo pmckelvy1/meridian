@@ -369,6 +369,7 @@ export class SourceScraperDO extends DurableObject<Env> {
    * Supports endpoints:
    * - /trigger: Manually triggers an immediate scrape
    * - /status: Returns the current state and next alarm time
+   * - /delete: Deletes the DO
    * - /initialize: Sets up the scraper with a new source configuration
    *
    * @param request The incoming HTTP request
@@ -391,6 +392,18 @@ export class SourceScraperDO extends DurableObject<Env> {
         state: state || { error: 'State not initialized' },
         nextAlarmTimestamp: alarm,
       });
+    } else if (url.pathname === '/delete' && request.method === 'DELETE') {
+      fetchLogger.info('Delete request received');
+      try {
+        await this.destroy();
+        fetchLogger.info('DO successfully destroyed');
+        return new Response('Deleted', { status: 200 });
+      } catch (error) {
+        fetchLogger.error('Failed to destroy DO', undefined, error instanceof Error ? error : new Error(String(error)));
+        return new Response(`Failed to delete: ${error instanceof Error ? error.message : String(error)}`, {
+          status: 500,
+        });
+      }
     } else if (url.pathname === '/initialize' && request.method === 'POST') {
       fetchLogger.info('Initialize request received');
       const sourceDataResult = await tryCatchAsync(

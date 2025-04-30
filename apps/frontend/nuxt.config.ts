@@ -46,6 +46,7 @@ export default defineNuxtConfig({
     database: { url: '' }, // NUXT_DATABASE_URL
     mailerlite: { api_key: '', group_id: '' }, // NUXT_MAILERLITE_API_KEY, NUXT_MAILERLITE_GROUP_ID
     admin: { username: 'admin', password: 'hunter2' }, // NUXT_ADMIN_USERNAME, NUXT_ADMIN_PASSWORD
+    worker: { api_token: 'hunter2' }, // NUXT_WORKER_API_TOKEN
 
     // IMPORTANT: all "public" config is exposed to the client
     public: { WORKER_API: 'http://localhost:8787' }, // NUXT_PUBLIC_WORKER_API
