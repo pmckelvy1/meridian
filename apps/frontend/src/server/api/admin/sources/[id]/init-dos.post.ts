@@ -18,15 +18,15 @@ export default defineEventHandler(async event => {
   }
 
   try {
-    await fetch(`${config.public.WORKER_API}/do/admin/initialize-dos`, {
+    await fetch(`${config.public.WORKER_API}/do/admin/source/${sourceId}/init`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${config.worker.api_token}`,
       },
     });
   } catch (error) {
-    console.error('Failed to initialize DOs', error);
-    throw createError({ statusCode: 500, statusMessage: 'Failed to initialize DOs' });
+    console.error('Failed to initialize DO', error);
+    throw createError({ statusCode: 500, statusMessage: 'Failed to initialize DO' });
   }
 
   return { success: true };

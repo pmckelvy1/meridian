@@ -28,16 +28,16 @@ export default defineEventHandler(async event => {
 
   const config = useRuntimeConfig();
 
-  try {
-    await fetch(`${config.public.WORKER_API}/do/admin/initialize-dos`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${config.worker.api_token}`,
-      },
-    });
-  } catch (error) {
-    throw createError({ statusCode: 500, statusMessage: 'Failed to initialize DOs' });
-  }
+  // try {
+  //   await fetch(`${config.public.WORKER_API}/do/admin/initialize-dos`, {
+  //     method: 'POST',
+  //     headers: {
+  //       Authorization: `Bearer ${config.worker.api_token}`,
+  //     },
+  //   });
+  // } catch (error) {
+  //   throw createError({ statusCode: 500, statusMessage: 'Failed to initialize DOs' });
+  // }
 
   return {
     success: true,
