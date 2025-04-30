@@ -169,15 +169,29 @@ export class SourceScraperDO extends DurableObject<Env> {
       throw new Error('Failed to persist initial DO state.');
     }
 
-    // Update the source's do_initialized_at field
-    await getDb(this.env.DATABASE_URL)
-      .update($sources)
-      .set({ do_initialized_at: new Date() })
-      .where(eq($sources.id, sourceData.id));
+    try {
+      // Update the source's do_initialized_at field
+      await getDb(this.env.DATABASE_URL)
+        .update($sources)
+        .set({ do_initialized_at: new Date() })
+        .where(eq($sources.id, sourceData.id));
+    } catch (dbError) {
+      logger.error('Failed to update source do_initialized_at', undefined, dbError as Error);
+      throw new Error(
+        `Failed to update source initialization status: ${dbError instanceof Error ? dbError.message : String(dbError)}`
+      );
+    }
 
-    // Only set alarm if state was successfully stored
-    await this.ctx.storage.setAlarm(Date.now() + 5000);
-    logger.info('Initial alarm set.');
+    try {
+      // Only set alarm if state was successfully stored
+      await this.ctx.storage.setAlarm(Date.now() + 5000);
+      logger.info('Initial alarm set.');
+    } catch (alarmError) {
+      logger.error('Failed to set initial alarm', undefined, alarmError as Error);
+      throw new Error(
+        `Failed to set initial alarm: ${alarmError instanceof Error ? alarmError.message : String(alarmError)}`
+      );
+    }
   }
 
   /**
