@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { HonoEnv } from '../app';
-import { $articles, $sources, getDb, eq, isNotNull } from '@meridian/database';
+import { $articles, $sources, getDb, eq, isNull } from '@meridian/database';
 import { hasValidAuthToken } from '../lib/utils';
 import { z } from 'zod';
 import { zValidator } from '@hono/zod-validator';
@@ -132,7 +132,7 @@ const route = new Hono<HonoEnv>()
           scrape_frequency: $sources.scrape_frequency,
         })
         .from($sources)
-        .where(isNotNull($sources.do_initialized_at))
+        .where(isNull($sources.do_initialized_at))
     );
     if (allSourcesResult.isErr()) {
       const error =
