@@ -98,7 +98,7 @@ async function attemptWithRetries<T, E extends Error>(
  * - Handling failures with retries
  */
 export class SourceScraperDO extends DurableObject<Env> {
-  private logger: Logger;
+  // private logger: Logger;
 
   /**
    * Initializes the DO with logging
@@ -108,8 +108,8 @@ export class SourceScraperDO extends DurableObject<Env> {
    */
   constructor(ctx: DurableObjectState, env: Env) {
     super(ctx, env);
-    this.logger = new Logger({ durable_object: 'SourceScraperDO', do_id: this.ctx.id.toString() });
-    this.logger.info('DO initialized');
+    // this.logger = new Logger({ durable_object: 'SourceScraperDO', do_id: this.ctx.id.toString() });
+    // this.logger.info('DO initialized');
   }
 
   /**
@@ -117,7 +117,7 @@ export class SourceScraperDO extends DurableObject<Env> {
    *
    * @param sourceData Source configuration including ID, URL, and scrape frequency
    * @throws Error if initialization fails
-   */
+
   async initialize(sourceData: { id: number; url: string; scrape_frequency: number }): Promise<void> {
     const logger = this.logger.child({ operation: 'initialize', source_id: sourceData.id, url: sourceData.url });
     logger.info('Initializing with data', { source_data: sourceData });
@@ -193,13 +193,15 @@ export class SourceScraperDO extends DurableObject<Env> {
       );
     }
   }
+       */
 
   /**
    * Logs a simple hello message
    */
   sayHello() {
-    const logger = this.logger.child({ operation: 'sayHello' });
-    logger.info('Hello');
+    // const logger = this.logger.child({ operation: 'sayHello' });
+    // logger.info('Hello');
+    console.log('Hello');
   }
 
   /**
@@ -212,7 +214,7 @@ export class SourceScraperDO extends DurableObject<Env> {
    * 4. Inserts new articles into the database
    * 5. Sends new article IDs to the processing queue
    * 6. Schedules the next alarm
-   */
+
   async alarm(): Promise<void> {
     // Keep logger instance outside try block if possible,
     // but create child logger inside if needed after state is fetched.
@@ -384,6 +386,7 @@ export class SourceScraperDO extends DurableObject<Env> {
       );
     }
   }
+       */
 
   /**
    * Handles HTTP requests to manage the scraper
@@ -396,7 +399,7 @@ export class SourceScraperDO extends DurableObject<Env> {
    *
    * @param request The incoming HTTP request
    * @returns HTTP response with appropriate status and data
-   */
+
   async fetch(request: Request): Promise<Response> {
     const url = new URL(request.url);
     const fetchLogger = this.logger.child({ operation: 'fetch', method: request.method, path: url.pathname });
@@ -469,11 +472,12 @@ export class SourceScraperDO extends DurableObject<Env> {
     fetchLogger.warn('Path not found');
     return new Response('Not found', { status: 404 });
   }
+       */
 
   /**
    * Cleanup method called when the DO is about to be destroyed
    * Removes all stored state
-   */
+
   async destroy() {
     this.logger.info('Destroy called, deleting storage');
     const state = await this.ctx.storage.get<SourceState>('state');
@@ -487,4 +491,5 @@ export class SourceScraperDO extends DurableObject<Env> {
     await this.ctx.storage.deleteAll();
     this.logger.info('Storage deleted');
   }
+       */
 }
