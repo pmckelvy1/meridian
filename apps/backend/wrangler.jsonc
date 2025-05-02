@@ -25,12 +25,18 @@
   "observability": {
     "enabled": true,
   },
+  "hyperdrive": [
+    {
+      "binding": "HYPERDRIVE",
+      "id": "b748bf8359b74c519d64501151cecd80",
+      "localConnectionString": "postgresql://postgres:mysecretpassword@localhost:5432/postgres",
+    },
+  ],
   /**
    * Smart Placement
    * Docs: https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement
    */
   "placement": { "mode": "smart" },
-
   /**
    * Bindings
    * Bindings allow your Worker to interact with resources on the Cloudflare Developer Platform, including
@@ -70,14 +76,12 @@
       "class_name": "ProcessArticles",
     },
   ],
-
-  // NOTE: tail workers make durable objects crash for now - 30/04/2025
+  // !!! NOTE !!! : tail workers make workers with durable objects CRASH for now - 30/04/2025
   // "tail_consumers": [
   //   {
   //     "service": "meridian-backend",
   //   },
   // ],
-
   /**
    * Environment Variables
    * https://developers.cloudflare.com/workers/wrangler/configuration/#environment-variables

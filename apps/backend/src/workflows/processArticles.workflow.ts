@@ -58,7 +58,7 @@ export class ProcessArticles extends WorkflowEntrypoint<Env, ProcessArticlesPara
    */
   async run(_event: WorkflowEvent<ProcessArticlesParams>, step: WorkflowStep) {
     const env = this.env;
-    const db = getDb(env.DATABASE_URL);
+    const db = getDb(env.HYPERDRIVE);
     const google = createGoogleGenerativeAI({
       apiKey: env.GEMINI_API_KEY,
       baseURL: env.GEMINI_BASE_URL || 'https://generativelanguage.googleapis.com/v1beta',

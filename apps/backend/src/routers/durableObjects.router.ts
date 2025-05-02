@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { HonoEnv } from '../app';
-import { $articles, $sources, getDb, eq, isNull } from '@meridian/database';
-import { hasValidAuthToken } from '../lib/utils';
+import { $articles, $sources, eq, isNull } from '@meridian/database';
+import { hasValidAuthToken, getDb } from '../lib/utils';
 import { z } from 'zod';
 import { zValidator } from '@hono/zod-validator';
 import { tryCatchAsync } from '../lib/tryCatchAsync';
@@ -52,7 +52,7 @@ const route = new Hono<HonoEnv>()
       const initLogger = logger.child({ operation: 'init-source' });
       const { sourceId } = c.req.valid('param');
 
-      const db = getDb(c.env.DATABASE_URL);
+      const db = getDb(c.env.HYPERDRIVE);
 
       // Get the source first
       const sourceResult = await tryCatchAsync(
@@ -102,7 +102,7 @@ const route = new Hono<HonoEnv>()
     const initLogger = logger.child({ operation: 'initialize-dos' });
     initLogger.info('Initializing SourceScraperDOs from database');
 
-    const db = getDb(c.env.DATABASE_URL);
+    const db = getDb(c.env.HYPERDRIVE);
 
     // Get batch size from query params, default to 100
     const batchSize = Number(c.req.query('batchSize')) || 100;
@@ -193,7 +193,7 @@ const route = new Hono<HonoEnv>()
       const deleteLogger = logger.child({ operation: 'delete-source' });
       const { sourceId } = c.req.valid('param');
 
-      const db = getDb(c.env.DATABASE_URL);
+      const db = getDb(c.env.HYPERDRIVE);
 
       // Get the source first to get its URL
       const sourceResult = await tryCatchAsync(

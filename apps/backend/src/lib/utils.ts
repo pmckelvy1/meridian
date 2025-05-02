@@ -4,10 +4,16 @@ import { HonoEnv } from '../app';
 import { articleAnalysisSchema } from '../prompts/articleAnalysis.prompt';
 import { z } from 'zod';
 
-export function getDb(databaseUrl: string) {
-  // prepare: false is required for compatibility with connection poolers like Supabase's PgBouncer
-  // as prepared statements are connection-specific.
-  return getDbFromDatabase(databaseUrl, { prepare: false });
+export function getDb(hyperdrive: Hyperdrive) {
+  return getDbFromDatabase(hyperdrive.connectionString, {
+    // Workers limit the number of concurrent external connections, so be sure to limit
+    // the size of the local connection pool that postgres.js may establish.
+    max: 5,
+
+    // If you are not using array types in your Postgres schema,
+    // disabling this will save you an extra round-trip every time you connect.
+    fetch_types: false,
+  });
 }
 
 export function hasValidAuthToken(c: Context<HonoEnv>) {

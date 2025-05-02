@@ -1,10 +1,10 @@
 import { Hono } from 'hono';
 import { z } from 'zod';
 import type { HonoEnv } from '../app';
-import { $sources, eq, getDb } from '@meridian/database';
+import { $sources, eq } from '@meridian/database';
 import { zValidator } from '@hono/zod-validator';
 import { tryCatchAsync } from '../lib/tryCatchAsync';
-import { hasValidAuthToken } from '../lib/utils';
+import { hasValidAuthToken, getDb } from '../lib/utils';
 import { Logger } from '../lib/logger';
 
 const logger = new Logger({ router: 'sources' });
@@ -28,7 +28,7 @@ const route = new Hono<HonoEnv>().delete(
     });
     routeLogger.info('Attempting to delete source');
 
-    const db = getDb(c.env.DATABASE_URL);
+    const db = getDb(c.env.HYPERDRIVE);
 
     const sourceResult = await tryCatchAsync(
       db.query.$sources.findFirst({

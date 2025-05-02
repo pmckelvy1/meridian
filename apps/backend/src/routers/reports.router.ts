@@ -1,8 +1,8 @@
 import { Hono } from 'hono';
 import { z } from 'zod';
 import type { HonoEnv } from '../app';
-import { $reports, desc, getDb } from '@meridian/database';
-import { hasValidAuthToken } from '../lib/utils';
+import { $reports, desc } from '@meridian/database';
+import { hasValidAuthToken, getDb } from '../lib/utils';
 import { zValidator } from '@hono/zod-validator';
 import { tryCatchAsync } from '../lib/tryCatchAsync';
 
@@ -15,7 +15,7 @@ const route = new Hono<HonoEnv>()
     }
 
     const reportResult = await tryCatchAsync(
-      getDb(c.env.DATABASE_URL).query.$reports.findFirst({
+      getDb(c.env.HYPERDRIVE).query.$reports.findFirst({
         orderBy: desc($reports.createdAt),
       })
     );
@@ -61,7 +61,7 @@ const route = new Hono<HonoEnv>()
         return c.json({ error: 'Unauthorized' }, 401);
       }
 
-      const db = getDb(c.env.DATABASE_URL);
+      const db = getDb(c.env.HYPERDRIVE);
       const body = c.req.valid('json');
 
       const reportResult = await tryCatchAsync(db.insert($reports).values(body));

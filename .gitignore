@@ -196,3 +196,12 @@ apps/briefs
 .mypy_cache
 .ruff_cache
 *.egg-info
+
+
+# TEMP
+feeds.json
+CONTRIBUTING.md
+MAIN_LIST.JSON
+NOTES.MD
+SETUP.MD
+TODO.MD

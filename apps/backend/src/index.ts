@@ -11,6 +11,7 @@ export type Env = {
   ARTICLE_PROCESSING_QUEUE: Queue<ArticleQueueMessage>;
   SOURCE_SCRAPER: DurableObjectNamespace<SourceScraperDO>;
   PROCESS_ARTICLES: Workflow;
+  HYPERDRIVE: Hyperdrive;
 
   // Secrets
   API_TOKEN: string;

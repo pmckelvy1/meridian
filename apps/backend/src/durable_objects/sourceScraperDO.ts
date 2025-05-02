@@ -123,7 +123,7 @@ export class SourceScraperDO extends DurableObject<Env> {
     logger.info('Initializing with data', { source_data: sourceData });
 
     const sourceExistsResult = await ResultAsync.fromPromise(
-      getDb(this.env.DATABASE_URL).query.$sources.findFirst({ where: (s, { eq }) => eq(s.id, sourceData.id) }),
+      getDb(this.env.HYPERDRIVE).query.$sources.findFirst({ where: (s, { eq }) => eq(s.id, sourceData.id) }),
       e => new Error(`Database query failed: ${e}`)
     );
     if (sourceExistsResult.isErr()) {
@@ -171,7 +171,7 @@ export class SourceScraperDO extends DurableObject<Env> {
 
     try {
       // Update the source's do_initialized_at field
-      await getDb(this.env.DATABASE_URL)
+      await getDb(this.env.HYPERDRIVE)
         .update($sources)
         .set({ do_initialized_at: new Date() })
         .where(eq($sources.id, sourceData.id));
@@ -318,7 +318,7 @@ export class SourceScraperDO extends DurableObject<Env> {
       const insertResult = await attemptWithRetries(
         async () =>
           ResultAsync.fromPromise(
-            getDb(this.env.DATABASE_URL)
+            getDb(this.env.HYPERDRIVE)
               .insert($articles)
               .values(newArticles)
               .onConflictDoNothing({ target: $articles.url }) // Make sure 'url' is unique constraint name or column
@@ -471,7 +471,7 @@ export class SourceScraperDO extends DurableObject<Env> {
     const state = await this.ctx.storage.get<SourceState>('state');
     if (state?.sourceId) {
       // Clear the do_initialized_at field when DO is destroyed
-      await getDb(this.env.DATABASE_URL)
+      await getDb(this.env.HYPERDRIVE)
         .update($sources)
         .set({ do_initialized_at: null })
         .where(eq($sources.id, state.sourceId));
