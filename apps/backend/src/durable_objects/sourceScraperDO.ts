@@ -329,6 +329,28 @@ export class SourceScraperDO extends DurableObject<Env> {
         validatedState.data.lastChecked = now;
         await this.ctx.storage.put('state', validatedState.data);
         alarmLogger.info('Updated lastChecked', { timestamp: new Date(now).toISOString() });
+
+        // Update source lastChecked in database with retries
+        const sourceUpdateLogger = alarmLogger.child({ step: 'Source Update' });
+        const sourceUpdateResult = await attemptWithRetries(
+          async () =>
+            ResultAsync.fromPromise(
+              getDb(this.env.HYPERDRIVE)
+                .update($sources)
+                .set({ lastChecked: new Date(now) })
+                .where(eq($sources.id, sourceId)),
+              e => (e instanceof Error ? e : new Error(`Source update failed: ${String(e)}`))
+            ),
+          MAX_STEP_RETRIES,
+          INITIAL_RETRY_DELAY_MS,
+          sourceUpdateLogger
+        );
+
+        if (sourceUpdateResult.isErr()) {
+          sourceUpdateLogger.error('Failed to update source lastChecked after all retries');
+          return;
+        }
+        sourceUpdateLogger.info('Updated source lastChecked in database');
         return;
       }
 
@@ -395,6 +417,28 @@ export class SourceScraperDO extends DurableObject<Env> {
       validatedState.data.lastChecked = now;
       await this.ctx.storage.put('state', validatedState.data);
       alarmLogger.info('Updated lastChecked', { timestamp: new Date(now).toISOString() });
+
+      // Update source lastChecked in database with retries
+      const sourceUpdateLogger = alarmLogger.child({ step: 'Source Update' });
+      const sourceUpdateResult = await attemptWithRetries(
+        async () =>
+          ResultAsync.fromPromise(
+            getDb(this.env.HYPERDRIVE)
+              .update($sources)
+              .set({ lastChecked: new Date(now) })
+              .where(eq($sources.id, sourceId)),
+            e => (e instanceof Error ? e : new Error(`Source update failed: ${String(e)}`))
+          ),
+        MAX_STEP_RETRIES,
+        INITIAL_RETRY_DELAY_MS,
+        sourceUpdateLogger
+      );
+
+      if (sourceUpdateResult.isErr()) {
+        sourceUpdateLogger.error('Failed to update source lastChecked after all retries');
+        return;
+      }
+      sourceUpdateLogger.info('Updated source lastChecked in database');
     } catch (error) {
       // Use the latest available logger instance (might be base or detailed)
       const errorLogger = alarmLogger || this.logger;
