@@ -1,4 +1,4 @@
-import { sql } from '@meridian/database';
+import { sql, $articles, $sources, and, lte, gte } from '@meridian/database';
 import { getDB } from '~/server/lib/utils';
 
 export default defineEventHandler(async event => {
@@ -7,7 +7,7 @@ export default defineEventHandler(async event => {
   const db = getDB(event);
   const sources = await db.query.$sources.findMany();
   if (sources.length === 0) {
-    return [];
+    return { overview: null, sources: [] };
   }
 
   // get article stats for last 7 days
@@ -23,6 +23,7 @@ export default defineEventHandler(async event => {
     },
   });
 
+  // calculate per-source stats
   const sourceStats = sources.map(source => {
     const sourceArticles = articleStats.filter(a => a.sourceId === source.id);
     const last24hArticles = sourceArticles.filter(
@@ -76,5 +77,61 @@ export default defineEventHandler(async event => {
     };
   });
 
-  return sourceStats;
+  // get global stats
+  const startOfToday = new Date();
+  startOfToday.setUTCHours(0, 0, 0, 0);
+
+  const [lastSourceCheck, lastArticleProcessed, lastArticleFetched, todayStats, staleSources] = await Promise.all([
+    // get latest source check
+    db.query.$sources.findFirst({
+      orderBy: sql`last_checked DESC NULLS LAST`,
+      columns: { lastChecked: true },
+    }),
+    // get latest processed article
+    db.query.$articles.findFirst({
+      where: sql`status = 'PROCESSED'`,
+      orderBy: sql`processed_at DESC NULLS LAST`,
+      columns: { processedAt: true },
+    }),
+    // get latest fetched article
+    db.query.$articles.findFirst({
+      orderBy: sql`created_at DESC NULLS LAST`,
+      columns: { createdAt: true },
+    }),
+    // get today's stats
+    db.query.$articles.findMany({
+      where: and(gte($articles.createdAt, startOfToday)),
+      columns: {
+        status: true,
+        createdAt: true,
+        processedAt: true,
+      },
+    }),
+    // get stale sources count
+    db.query.$sources.findMany({
+      where: sql`(
+        (scrape_frequency = 1 AND last_checked < NOW() - INTERVAL '2 hours') OR
+        (scrape_frequency = 2 AND last_checked < NOW() - INTERVAL '8 hours') OR
+        (scrape_frequency = 3 AND last_checked < NOW() - INTERVAL '12 hours') OR
+        (scrape_frequency = 4 AND last_checked < NOW() - INTERVAL '48 hours')
+      )`,
+      columns: { id: true },
+    }),
+  ]);
+
+  const overview = {
+    lastSourceCheck: lastSourceCheck?.lastChecked?.toISOString() ?? null,
+    lastArticleProcessed: lastArticleProcessed?.processedAt?.toISOString() ?? null,
+    lastArticleFetched: lastArticleFetched?.createdAt?.toISOString() ?? null,
+    articlesProcessedToday: todayStats.filter(a => a.status === 'PROCESSED').length,
+    articlesFetchedToday: todayStats.length,
+    errorsToday: todayStats.filter(a => a.status?.endsWith('_FAILED')).length,
+    staleSourcesCount: staleSources.length,
+    totalSourcesCount: sources.length,
+  };
+
+  return {
+    overview,
+    sources: sourceStats,
+  };
 });

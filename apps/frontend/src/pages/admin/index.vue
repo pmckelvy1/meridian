@@ -1,9 +1,11 @@
 <script lang="ts" setup>
 import { z } from 'zod';
+import { formatDistanceToNow } from 'date-fns';
+import { LockClosedIcon, LockOpenIcon } from '@heroicons/vue/20/solid';
 
 definePageMeta({ layout: 'admin' });
 
-const { data: sources, error: sourcesError } = await useFetch('/api/admin/sources');
+const { data, error: sourcesError } = await useFetch('/api/admin/sources');
 if (sourcesError.value) {
   console.error(sourcesError.value);
 
@@ -14,7 +16,11 @@ if (sourcesError.value) {
   }
 }
 
-type Source = NonNullable<typeof sources.value>[number];
+type Source = NonNullable<typeof data.value>['sources'][number];
+type Overview = NonNullable<typeof data.value>['overview'];
+
+const sources = computed(() => data.value?.sources ?? []);
+const overview = computed(() => data.value?.overview);
 
 const config = useRuntimeConfig();
 
@@ -138,6 +144,11 @@ const formatDate = (dateStr: string) => {
   return `${Y}-${M}-${D} ${h}:${m}:${s}`;
 };
 
+const formatTimeAgo = (dateStr: string | null) => {
+  if (!dateStr) return 'Never';
+  return formatDistanceToNow(new Date(dateStr), { addSuffix: true });
+};
+
 async function addSource() {
   const url = prompt('Enter the URL of the source you want to add');
   if (!url) return;
@@ -160,6 +171,35 @@ async function addSource() {
     throw createError({ statusCode: 500, statusMessage: 'Failed to fetch sources' });
   }
 }
+
+// Add health status computation
+const getSourceHealth = (source: Source) => {
+  const isStale = source.lastChecked
+    ? new Date().getTime() - new Date(source.lastChecked).getTime() > 24 * 60 * 60 * 1000
+    : true;
+
+  if ((source.errorRate ?? 0) > 10 || isStale) return 'red';
+  if ((source.errorRate ?? 0) > 0 || (source.lowQualityRate ?? 0) > 15) return 'yellow';
+  return 'green';
+};
+
+const getHealthColor = (health: string) => {
+  switch (health) {
+    case 'red':
+      return 'bg-red-500';
+    case 'yellow':
+      return 'bg-yellow-500';
+    case 'green':
+      return 'bg-green-500';
+    default:
+      return 'bg-gray-500';
+  }
+};
+
+const isSourceStale = (lastChecked: string | null | undefined) => {
+  if (!lastChecked) return true;
+  return new Date().getTime() - new Date(lastChecked).getTime() > 24 * 60 * 60 * 1000;
+};
 </script>
 
 <template>
@@ -171,6 +211,53 @@ async function addSource() {
       <button @click="addSource" class="border px-4 py-2 rounded hover:cursor-pointer hover:bg-gray-100">
         Add Source
       </button>
+    </div>
+
+    <!-- Overview Section -->
+    <div v-if="overview" class="grid grid-cols-4 gap-4 mb-6">
+      <div class="col-span-4 bg-white p-4 rounded border">
+        <h2 class="text-lg font-medium text-gray-900 mb-4">System Overview</h2>
+        <div class="grid grid-cols-4 gap-4">
+          <!-- Last Activity -->
+          <div class="space-y-2">
+            <div class="text-xs text-gray-500 uppercase tracking-wide">Last Activity</div>
+            <div>
+              <div class="text-sm text-gray-600">Source Check: {{ formatTimeAgo(overview.lastSourceCheck) }}</div>
+              <div class="text-sm text-gray-600">
+                Article Processed: {{ formatTimeAgo(overview.lastArticleProcessed) }}
+              </div>
+              <div class="text-sm text-gray-600">Article Fetched: {{ formatTimeAgo(overview.lastArticleFetched) }}</div>
+            </div>
+          </div>
+
+          <!-- Today's Stats -->
+          <div class="space-y-2">
+            <div class="text-xs text-gray-500 uppercase tracking-wide">Today's Stats</div>
+            <div>
+              <div class="text-sm text-gray-600">Articles Fetched: {{ overview.articlesFetchedToday }}</div>
+              <div class="text-sm text-gray-600">Articles Processed: {{ overview.articlesProcessedToday }}</div>
+              <div class="text-sm text-gray-600">Errors: {{ overview.errorsToday }}</div>
+            </div>
+          </div>
+
+          <!-- Source Health -->
+          <div class="space-y-2">
+            <div class="text-xs text-gray-500 uppercase tracking-wide">Source Health</div>
+            <div>
+              <div class="text-sm text-gray-600">Total Sources: {{ overview.totalSourcesCount }}</div>
+              <div
+                class="text-sm"
+                :class="{
+                  'text-red-600': overview.staleSourcesCount > 0,
+                  'text-gray-600': overview.staleSourcesCount === 0,
+                }"
+              >
+                Stale Sources: {{ overview.staleSourcesCount }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div class="grid grid-cols-4 gap-4 mb-6">
@@ -296,28 +383,24 @@ async function addSource() {
       <table class="min-w-full divide-y divide-gray-200">
         <thead>
           <tr class="bg-gray-50">
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Source</th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Paywall</th>
+            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-8"></th>
+            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Source</th>
             <th
-              class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-              @click="toggleSort('totalArticles')"
+              class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+              @click="toggleSort('lastChecked')"
             >
-              Total Articles
-              <span v-if="sortKey === 'totalArticles'" class="text-gray-400">{{
-                sortOrder === 'asc' ? '↑' : '↓'
-              }}</span>
+              Last Checked
+              <span v-if="sortKey === 'lastChecked'" class="text-gray-400">{{ sortOrder === 'asc' ? '↑' : '↓' }}</span>
             </th>
             <th
-              class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-              @click="toggleSort('avgPerDay')"
+              class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+              @click="toggleSort('errorRate')"
             >
-              Avg/Day
-              <span v-if="sortKey === 'avgPerDay'" class="text-gray-400">{{ sortOrder === 'asc' ? '↑' : '↓' }}</span>
+              Error Rate
+              <span v-if="sortKey === 'errorRate'" class="text-gray-400">{{ sortOrder === 'asc' ? '↑' : '↓' }}</span>
             </th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Frequency</th>
             <th
-              class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+              class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
               @click="toggleSort('processSuccessRate')"
             >
               Success Rate
@@ -326,14 +409,23 @@ async function addSource() {
               }}</span>
             </th>
             <th
-              class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-              @click="toggleSort('errorRate')"
+              class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+              @click="toggleSort('totalArticles')"
             >
-              Error Rate
-              <span v-if="sortKey === 'errorRate'" class="text-gray-400">{{ sortOrder === 'asc' ? '↑' : '↓' }}</span>
+              Total Articles
+              <span v-if="sortKey === 'totalArticles'" class="text-gray-400">{{
+                sortOrder === 'asc' ? '↑' : '↓'
+              }}</span>
             </th>
             <th
-              class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+              class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+              @click="toggleSort('avgPerDay')"
+            >
+              Avg/Day
+              <span v-if="sortKey === 'avgPerDay'" class="text-gray-400">{{ sortOrder === 'asc' ? '↑' : '↓' }}</span>
+            </th>
+            <th
+              class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
               @click="toggleSort('lowQualityRate')"
             >
               Low Quality
@@ -341,51 +433,56 @@ async function addSource() {
                 sortOrder === 'asc' ? '↑' : '↓'
               }}</span>
             </th>
-            <th
-              class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-              @click="toggleSort('avgProcessingTime')"
-            >
-              Avg Process Time
-              <span v-if="sortKey === 'avgProcessingTime'" class="text-gray-400">{{
-                sortOrder === 'asc' ? '↑' : '↓'
-              }}</span>
-            </th>
-            <th
-              class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-              @click="toggleSort('lastChecked')"
-            >
-              Last Checked
-              <span v-if="sortKey === 'lastChecked'" class="text-gray-400">{{ sortOrder === 'asc' ? '↑' : '↓' }}</span>
-            </th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-8">Paywall</th>
+            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-200">
-          <tr v-for="source in sortedSources" :key="source.id" class="hover:bg-gray-50">
-            <td class="px-4 py-3">
+          <tr
+            v-for="source in sortedSources"
+            :key="source.id"
+            class="hover:bg-gray-50/50 transition-colors"
+            :class="{
+              'bg-red-50 dark:bg-red-900/10': getSourceHealth(source) === 'red',
+              'bg-yellow-50 dark:bg-yellow-900/10': getSourceHealth(source) === 'yellow',
+              'bg-green-50 dark:bg-green-900/10': getSourceHealth(source) === 'green',
+            }"
+          >
+            <td class="px-4 py-2">
+              <span class="inline-block w-3 h-3 rounded-full" :class="getHealthColor(getSourceHealth(source))"></span>
+            </td>
+            <td class="px-4 py-2">
               <NuxtLink :to="source.url" target="_blank" class="text-gray-500 hover:underline">{{
                 source.name
               }}</NuxtLink>
             </td>
-            <td class="px-4 py-3">{{ source.category }}</td>
-            <td class="px-4 py-3">
-              <span v-if="source.paywall" class="text-amber-600">Yes</span>
-              <span v-else class="text-gray-400">No</span>
+            <td
+              class="px-4 py-2"
+              :class="{
+                'text-gray-400': isSourceStale(source.lastChecked),
+                'text-red-600': !source.lastChecked,
+              }"
+            >
+              {{ formatDate(source.lastChecked ?? '') }}
             </td>
-            <td class="px-4 py-3">{{ source.totalArticles }}</td>
-            <td class="px-4 py-3">{{ source.avgPerDay ? source.avgPerDay.toFixed(1) : 'N/A' }}</td>
-            <td class="px-4 py-3">{{ source.frequency }}</td>
-            <td class="px-4 py-3">{{ source.processSuccessRate?.toFixed(1) ?? 'N/A' }}%</td>
-            <td class="px-4 py-3" :class="{ 'text-red-600': (source.errorRate ?? 0) > 5 }">
+            <td class="px-4 py-2" :class="{ 'text-red-600': (source.errorRate ?? 0) > 5 }">
               {{ source.errorRate?.toFixed(1) ?? 'N/A' }}%
             </td>
-            <td class="px-4 py-3" :class="{ 'text-amber-600': (source.lowQualityRate ?? 0) > 10 }">
+            <td class="px-4 py-2">{{ source.processSuccessRate?.toFixed(1) ?? 'N/A' }}%</td>
+            <td class="px-4 py-2">{{ source.totalArticles }}</td>
+            <td class="px-4 py-2">{{ source.avgPerDay ? source.avgPerDay.toFixed(1) : 'N/A' }}</td>
+            <td class="px-4 py-2" :class="{ 'text-amber-600': (source.lowQualityRate ?? 0) > 10 }">
               {{ source.lowQualityRate?.toFixed(1) ?? 'N/A' }}%
             </td>
-            <td class="px-4 py-3">{{ source.avgProcessingTime ? `${source.avgProcessingTime}s` : 'N/A' }}</td>
-            <td class="px-4 py-3 text-gray-500">{{ formatDate(source.lastChecked ?? '') }}</td>
-            <td class="px-4 py-3">
-              <NuxtLink :to="`/admin/feed/${source.id}`"> View Feed </NuxtLink>
+            <td class="px-4 py-2">
+              <component
+                :is="source.paywall ? LockClosedIcon : LockOpenIcon"
+                class="w-4 h-4"
+                :class="source.paywall ? 'text-amber-600' : 'text-gray-400'"
+              />
+            </td>
+            <td class="px-4 py-2">
+              <NuxtLink :to="`/admin/feed/${source.id}`" class="text-blue-600 hover:underline"> View Feed </NuxtLink>
             </td>
           </tr>
         </tbody>
