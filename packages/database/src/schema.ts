@@ -17,6 +17,7 @@ export const articleStatusEnum = pgEnum('article_status', [
   'AI_ANALYSIS_FAILED',
   'EMBEDDING_FAILED',
   'R2_UPLOAD_FAILED',
+  'SKIPPED_TOO_OLD',
 ]);
 export const articleCompletenessEnum = pgEnum('article_completeness', [
   'COMPLETE',

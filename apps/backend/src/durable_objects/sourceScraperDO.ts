@@ -293,16 +293,37 @@ export class SourceScraperDO extends DurableObject<Env> {
 
       // --- Filter Articles ---
       const now = Date.now();
+      const ageThreshold = now - 48 * 60 * 60 * 1000; // 48 hours ago
 
-      const newArticles = articles.map(article => ({
-        sourceId: sourceId,
-        url: article.link,
-        title: article.title,
-        publishDate: article.pubDate,
-      }));
+      const articlesToProcess: Omit<typeof $articles.$inferInsert, 'id'>[] = [];
+      const articlesToSkip: Omit<typeof $articles.$inferInsert, 'id'>[] = [];
 
-      if (newArticles.length === 0) {
-        alarmLogger.info('No new articles found worth inserting');
+      articles.forEach(article => {
+        const publishTimestamp = article.pubDate ? article.pubDate.getTime() : 0;
+
+        if (publishTimestamp > ageThreshold) {
+          articlesToProcess.push({
+            sourceId: sourceId,
+            url: article.link,
+            title: article.title,
+            publishDate: article.pubDate,
+            // status defaults to PENDING_FETCH via schema
+          });
+        } else {
+          articlesToSkip.push({
+            sourceId: sourceId,
+            url: article.link,
+            title: article.title,
+            publishDate: article.pubDate,
+            status: 'SKIPPED_TOO_OLD',
+            processedAt: new Date(now),
+            failReason: 'Article older than 48-hour processing threshold',
+          });
+        }
+      });
+
+      if (articlesToProcess.length === 0 && articlesToSkip.length === 0) {
+        alarmLogger.info('No articles found (neither new nor old)');
 
         // Successfully processed, update lastChecked
         validatedState.data.lastChecked = now;
@@ -311,7 +332,12 @@ export class SourceScraperDO extends DurableObject<Env> {
         return;
       }
 
-      alarmLogger.info('Found new articles to insert', { article_count: newArticles.length });
+      alarmLogger.info('Processed articles from feed', {
+        to_process_count: articlesToProcess.length,
+        to_skip_count: articlesToSkip.length,
+      });
+
+      const allArticlesToInsert = [...articlesToProcess, ...articlesToSkip];
 
       // --- Workflow Step 3: Insert Articles with Retries ---
       const dbLogger = alarmLogger.child({ step: 'DB Insert' });
@@ -320,9 +346,9 @@ export class SourceScraperDO extends DurableObject<Env> {
           ResultAsync.fromPromise(
             getDb(this.env.HYPERDRIVE)
               .insert($articles)
-              .values(newArticles)
-              .onConflictDoNothing({ target: $articles.url }) // Make sure 'url' is unique constraint name or column
-              .returning({ insertedId: $articles.id }),
+              .values(allArticlesToInsert)
+              .onConflictDoNothing({ target: $articles.url })
+              .returning({ insertedId: $articles.id, insertedUrl: $articles.url }), // Return URL to map back
             e => (e instanceof Error ? e : new Error(`DB Insert failed: ${String(e)}`)) // Error mapper
           ),
         MAX_STEP_RETRIES,
@@ -334,19 +360,22 @@ export class SourceScraperDO extends DurableObject<Env> {
         return;
       }
 
-      const insertedRows = insertResult.value; // Type: { insertedId: number }[]
+      const insertedRows = insertResult.value; // Type: { insertedId: number, insertedUrl: string }[]
       dbLogger.info(`DB Insert completed`, { affected_rows: insertedRows.length });
 
+      // Filter inserted IDs to only include those that were meant for processing
+      const urlsToProcess = new Set(articlesToProcess.map(a => a.url));
+      const idsToQueue = insertedRows.filter(row => urlsToProcess.has(row.insertedUrl)).map(row => row.insertedId);
+
       // --- Send to Queue (No Retry here, relies on Queue's built-in retries/DLQ) ---
-      if (insertedRows.length > 0 && this.env.ARTICLE_PROCESSING_QUEUE) {
-        const insertedIds = insertedRows.map(r => r.insertedId);
+      if (idsToQueue.length > 0 && this.env.ARTICLE_PROCESSING_QUEUE) {
         const BATCH_SIZE_LIMIT = 100; // Adjust as needed
 
-        const queueLogger = alarmLogger.child({ step: 'Queue', total_ids: insertedIds.length });
-        queueLogger.info('Sending IDs to queue');
+        const queueLogger = alarmLogger.child({ step: 'Queue', total_ids_to_queue: idsToQueue.length });
+        queueLogger.info('Sending relevant IDs to queue');
 
-        for (let i = 0; i < insertedIds.length; i += BATCH_SIZE_LIMIT) {
-          const batch = insertedIds.slice(i, i + BATCH_SIZE_LIMIT);
+        for (let i = 0; i < idsToQueue.length; i += BATCH_SIZE_LIMIT) {
+          const batch = idsToQueue.slice(i, i + BATCH_SIZE_LIMIT);
           queueLogger.debug('Sending batch to queue', { batch_size: batch.length, batch_index: i / BATCH_SIZE_LIMIT });
 
           this.ctx.waitUntil(
