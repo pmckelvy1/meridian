@@ -137,7 +137,7 @@ def get_brief_prompt(stories: List[Dict], outline: str) -> str:
     return f"""
 You are tasked with generating a personalized daily intelligence brief based on a curated set of news analyses and a provided structural outline. Aim for something comprehensive yet engaging, roughly a 20-30 minute read.
 
-**User Interests:** Significant world news (geopolitics, politics, finance, economics), US news, France news (user is French/lives in France), China news (especially policy, economy, tech - seeking insights often missed in western media), and Technology/Science (AI/LLMs, biomed, space, real breakthroughs). Also include noteworthy items.
+**User Interests:** Significant world news (geopolitics, politics, finance, economics), US news, China news (especially policy, economy, tech - seeking insights often missed in western media), crypto, and Technology/Science (AI/LLMs, biomed, space, real breakthroughs). Also include noteworthy items.
 
 **Goal:** Leverage your analysis capabilities to create a focused brief that explains what's happening, why it matters, who's saying what, who's reporting what and identifies connections others might miss. The user values **informed, analytical takes**, grounded in the provided facts, but appreciates directness and avoids generic hedging or forced political correctness.
 

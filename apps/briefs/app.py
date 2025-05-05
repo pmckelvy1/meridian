@@ -44,9 +44,15 @@ CLUSTERING_PARAMS = {
 
 # Cycle break times in EST
 CYCLE_BREAKS = [6, 14, 22]  # 6am, 2pm, 10pm EST
+DEFAULT_CYCLE_DURATION = 8
 
-def get_cycle_boundaries(dt: datetime) -> Tuple[datetime, datetime]:
-    """Get the start and end times of the cycle that ended before the given datetime."""
+def get_cycle_boundaries(dt: datetime, cycle_duration: int = DEFAULT_CYCLE_DURATION) -> Tuple[datetime, datetime]:
+    """Get the start and end times of the cycle that ended before the given datetime.
+    
+    Args:
+        dt: The datetime to get cycle boundaries for
+        cycle_duration: The duration of the cycle in hours (defaults to 8 hours)
+    """
     # Convert to EST
     est = pytz.timezone('US/Eastern')
     dt_est = dt.astimezone(est)
@@ -61,8 +67,8 @@ def get_cycle_boundaries(dt: datetime) -> Tuple[datetime, datetime]:
     # Set cycle end time
     cycle_end = dt_est.replace(hour=cycle_end_hour, minute=0, second=0, microsecond=0)
     
-    # Set cycle start time (8 hours before end)
-    cycle_start = cycle_end - timedelta(hours=8)
+    # Set cycle start time (cycle_duration hours before end)
+    cycle_start = cycle_end - timedelta(hours=cycle_duration)
     
     return cycle_start, cycle_end
 
@@ -89,8 +95,11 @@ def generate_report():
         dt = datetime.fromisoformat(date_str)
         print(f"Generating report for {dt}")
         
+        # Get cycle duration from query parameter, default to 8 hours
+        cycle_duration = request.args.get('cycle_duration', default=DEFAULT_CYCLE_DURATION, type=int)
+        
         # Get cycle boundaries
-        cycle_start, cycle_end = get_cycle_boundaries(dt)
+        cycle_start, cycle_end = get_cycle_boundaries(dt, cycle_duration)
         # Check if a report already exists for this cycle
         response = requests.get(
             f"https://meridian-production.pmckelvy1.workers.dev/reports/cycle",
@@ -269,6 +278,7 @@ def generate_report():
                 if article.id in cluster['articles']:
                     used_sources.add(article.sourceId)
 
+        print(title_response[0])
         report = {
             "title": title_response[0],
             "content": brief_response[0],

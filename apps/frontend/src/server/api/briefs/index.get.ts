@@ -13,7 +13,7 @@ export default defineEventHandler(async event => {
     return {
       ...report,
       date: formatReportDate(createdAt),
-      slug: generateReportSlug(createdAt),
+      slug: report.id.toString(),
     };
   });
 });

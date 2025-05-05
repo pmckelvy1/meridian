@@ -9,7 +9,7 @@ const TOC_WIDTH_CLASS = 'w-64'; // Keep for template styling
 // Config & Route
 const config = useRuntimeConfig();
 const route = useRoute();
-const slug = route.path.split('/').pop()?.replaceAll('_', '/'); // Keep original logic for slug
+const slug = route.path.split('/').pop(); // Get the ID directly from the path
 
 if (!slug) {
   throw createError({ statusCode: 404, statusMessage: 'Brief slug not found in path' });

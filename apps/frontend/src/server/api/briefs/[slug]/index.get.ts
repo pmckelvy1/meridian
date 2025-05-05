@@ -25,19 +25,15 @@ export default defineEventHandler(async event => {
     throw createError({ statusCode: 400, statusMessage: 'Slug is required' });
   }
 
-  // decode slug & get date
-  const date = new Date(slug);
-  if (isNaN(date.getTime())) {
+  // Parse the report ID from the slug
+  const reportId = parseInt(slug, 10);
+  if (isNaN(reportId)) {
     throw createError({ statusCode: 400, statusMessage: 'Invalid slug' });
   }
 
-  // set start/end of the day for date range query
-  const startOfDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-  const endOfDay = new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1);
-
-  // get report created on this day
+  // get report by ID
   const report = await getDB(event).query.$reports.findFirst({
-    where: and(gte($reports.createdAt, startOfDay), lte($reports.createdAt, endOfDay)),
+    where: eq($reports.id, reportId),
     columns: {
       id: true,
       createdAt: true,
