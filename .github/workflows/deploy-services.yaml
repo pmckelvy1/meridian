@@ -74,8 +74,8 @@ jobs:
             MERIDIAN_ML_SERVICE_API_KEY
         env:
           API_TOKEN: ${{ secrets.API_TOKEN }}
-          AXIOM_DATASET: ${{ secrets.AXIOM_DATASET }}
-          AXIOM_TOKEN: ${{ secrets.AXIOM_TOKEN }}
+          AXIOM_DATASET: ${{ secrets.AXIOM_DATASET || '' }}
+          AXIOM_TOKEN: ${{ secrets.AXIOM_TOKEN || '' }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
