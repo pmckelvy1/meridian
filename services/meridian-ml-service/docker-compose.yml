@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   intel-ml-service:
-    image: pmckelvy/intel-ml-service:latest
+    image: pmckelvy/intel-ml-service
     ports:
       - '8080:8080'
     volumes:

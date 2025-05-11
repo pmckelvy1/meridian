@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   intel:
-    image: pmckelvy/intel:latest
+    image: pmckelvy/intel
     ports:
       - '5000:5000'
     volumes:
