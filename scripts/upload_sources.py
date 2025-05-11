@@ -14,7 +14,10 @@ def upload_source(worker_url: str, source: Dict) -> bool:
         response = requests.post(
             f"{worker_url}/sources",
             json=source,
-            headers={"Content-Type": "application/json"}
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {os.environ.get('API_TOKEN')}"
+            }
         )
         response.raise_for_status()
         print(f"Successfully uploaded source: {source['name']}")
