@@ -213,3 +213,5 @@ apps/briefs/src/env
 
 apps/briefs/generate-report.py
 
+scripts/env
+scripts/.env

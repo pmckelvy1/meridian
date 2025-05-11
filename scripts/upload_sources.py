@@ -7,6 +7,9 @@ from typing import List, Dict
 import os
 import csv
 from urllib.parse import urlparse
+from dotenv import load_dotenv
+
+load_dotenv()
 
 def upload_source(worker_url: str, source: Dict) -> bool:
     """Upload a single source to the worker."""
