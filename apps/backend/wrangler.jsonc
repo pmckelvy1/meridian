@@ -28,8 +28,8 @@
   "hyperdrive": [
     {
       "binding": "HYPERDRIVE",
-      "id": "b748bf8359b74c519d64501151cecd80",
-      "localConnectionString": "postgresql://postgres:mysecretpassword@localhost:5432/postgres",
+      "id": "e338db77e86348248f68763f1498d2ca",
+      "localConnectionString": "postgresql://postgres:intelpw123@localhost:5432/postgres",
     },
   ],
   /**
