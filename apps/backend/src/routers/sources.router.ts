@@ -22,9 +22,9 @@ const route = new Hono<HonoEnv>()
       })
     ),
     async c => {
-      // if (!hasValidAuthToken(c)) {
-      //   return c.json({ error: 'Unauthorized' }, 401);
-      // }
+      if (!hasValidAuthToken(c)) {
+        return c.json({ error: 'Unauthorized' }, 401);
+      }
 
       const routeLogger = logger.child({
         operation: 'create-source',

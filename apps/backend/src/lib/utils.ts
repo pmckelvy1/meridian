@@ -18,6 +18,7 @@ export function getDb(hyperdrive: Hyperdrive) {
 
 export function hasValidAuthToken(c: Context<HonoEnv>) {
   const auth = c.req.header('Authorization');
+  console.log('auth', auth, c.env.API_TOKEN);
   if (auth === undefined || auth !== `Bearer ${c.env.API_TOKEN}`) {
     return false;
   }
