@@ -31,7 +31,7 @@ const tierIntervals = {
   3: 6 * 60 * 60 * 1000, // Tier 3: Check every 6 hours
   4: 24 * 60 * 60 * 1000, // Tier 4: Check every 24 hours
 };
-const DEFAULT_INTERVAL = tierIntervals[2]; // Default to 4 hours if tier is invalid
+const DEFAULT_INTERVAL = tierIntervals[1]; // Default to 4 hours if tier is invalid
 
 // --- Retry Configuration ---
 const MAX_STEP_RETRIES = 3; // Max retries for *each* step (fetch, parse, insert)
