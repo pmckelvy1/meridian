@@ -15,9 +15,12 @@ from tqdm import tqdm
 import hdbscan
 import umap
 from concurrent.futures import ThreadPoolExecutor
-from typing import List, Dict, Any, Tuple
+from typing import List, Dict, Any, Tuple, Optional
 from pydantic import BaseModel, Field
 import requests
+import uuid
+import boto3
+from elevenlabs.client import ElevenLabs
 from src.helpers import process_story, get_brief_prompt, get_title_prompt, get_tldr_prompt, brief_system_prompt, average_pool
 import pytz
 
@@ -45,6 +48,89 @@ CLUSTERING_PARAMS = {
 # Cycle break times in EST
 CYCLE_BREAKS = [6, 14, 22]  # 6am, 2pm, 10pm EST
 DEFAULT_CYCLE_DURATION = 8
+
+# TTS Functions
+def generate_speech(text: str, voice_id: Optional[str] = None) -> bytes:
+    """
+    Generate speech from text using ElevenLabs API.
+    
+    Args:
+        text: The text to convert to speech
+        voice_id: Optional voice ID to use. If not provided, uses default voice.
+    
+    Returns:
+        bytes: The generated audio data
+    """
+    elevenlabs_api_key = os.getenv("ELEVENLABS_API_KEY")
+    if not elevenlabs_api_key:
+        raise ValueError("ElevenLabs API key not configured")
+    
+    client = ElevenLabs(api_key=elevenlabs_api_key)
+    
+    # Use default voice if none specified
+    voice = voice_id if voice_id else "JBFqnCBsd6RMkjVDRZzb"
+    
+    audio = client.text_to_speech.convert(
+        text=text,
+        voice_id=voice,
+        model_id="eleven_multilingual_v2",
+        output_format="mp3_44100_128",
+    )
+
+    # Collect all chunks into a single bytes object
+    audio_data = b""
+    for chunk in audio:
+        if chunk:
+            audio_data += chunk
+            
+    return audio_data
+
+def upload_to_r2(audio_data: bytes, filename: Optional[str] = None) -> str:
+    """
+    Upload audio data to Cloudflare R2.
+    
+    Args:
+        audio_data: The audio data to upload
+        filename: Optional filename. If not provided, generates a UUID.
+    
+    Returns:
+        str: The URL of the uploaded file
+    """
+    cloudflare_account_id = os.getenv("CLOUDFLARE_BUCKET_ACCOUNT")
+    cloudflare_access_key_id = os.getenv("CLOUDFLARE_ACCESS_KEY_ID")
+    cloudflare_secret_access_key = os.getenv("CLOUDFLARE_SECRET_ACCESS_KEY")
+    cloudflare_r2_bucket = os.getenv("CLOUDFLARE_R2_BUCKET")
+    
+    if not all([
+        cloudflare_account_id,
+        cloudflare_access_key_id,
+        cloudflare_secret_access_key,
+        cloudflare_r2_bucket
+    ]):
+        raise ValueError("Cloudflare R2 credentials not configured")
+    
+    # Generate filename if not provided
+    if not filename:
+        filename = f"{uuid.uuid4()}.mp3"
+    
+    # Initialize R2 client
+    s3 = boto3.client(
+        's3',
+        endpoint_url=f'https://{cloudflare_account_id}.eu.r2.cloudflarestorage.com/meridian-reports-prod',
+        aws_access_key_id=cloudflare_access_key_id,
+        aws_secret_access_key=cloudflare_secret_access_key
+    )
+    
+    # Upload to R2
+    s3.put_object(
+        Bucket=cloudflare_r2_bucket,
+        Key=filename,
+        Body=audio_data,
+        ContentType='audio/mpeg'
+    )
+    
+    # Return the public URL
+    return f"https://{cloudflare_r2_bucket}.r2.dev/{filename}"
 
 def get_cycle_boundaries(dt: datetime, cycle_duration: int = DEFAULT_CYCLE_DURATION) -> Tuple[datetime, datetime]:
     """Get the start and end times of the cycle that ended before the given datetime.
@@ -317,6 +403,45 @@ def generate_report():
         return jsonify({"error": f"Error:{str(e)}"}), 400
     except Exception as e:
         return jsonify({"error": f"An error occurred: {str(e)}"}), 500
+
+@app.route('/api/tts', methods=['POST'])
+def text_to_speech():
+    """
+    Converts text to speech using ElevenLabs API and stores the audio in Cloudflare R2.
+    """
+    try:
+        data = request.get_json()
+        if not data or 'text' not in data:
+            return jsonify({"error": "Text field is required"}), 400
+            
+        text = data['text']
+        voice_id = data.get('voice_id')
+        filename = data.get('filename')
+        
+        # Generate speech
+        audio_data = generate_speech(
+            text=text,
+            voice_id=voice_id
+        )
+        
+        # Upload to R2
+        audio_url = upload_to_r2(
+            audio_data=audio_data,
+            filename=filename
+        )
+        
+        # Extract filename from URL
+        filename = audio_url.split("/")[-1]
+        
+        return jsonify({
+            "audio_url": audio_url,
+            "filename": filename
+        })
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        print(f"ERROR during text-to-speech conversion: {e}")
+        return jsonify({"error": f"Internal server error during text-to-speech conversion: {str(e)}"}), 500
 
 if __name__ == '__main__':
     app.run(debug=True) 

@@ -24,3 +24,5 @@ optuna
 bertopic
 supabase
 dotenv
+elevenlabs
+boto3==1.34.34
