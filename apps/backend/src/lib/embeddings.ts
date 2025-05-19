@@ -8,6 +8,10 @@ const embeddingsResponseSchema = z.object({
 });
 
 export async function createEmbeddings(env: Env, texts: string[]) {
+  console.log('Creating embeddings', {
+    url: env.MERIDIAN_ML_SERVICE_URL,
+    apiKey: env.MERIDIAN_ML_SERVICE_API_KEY,
+  });
   const response = await tryCatchAsync(
     fetch(env.MERIDIAN_ML_SERVICE_URL + '/embeddings', {
       method: 'POST',
@@ -21,6 +25,7 @@ export async function createEmbeddings(env: Env, texts: string[]) {
   if (response.isErr()) {
     return err(response.error);
   } else if (!response.value.ok) {
+    console.log('response', response.value);
     return err(new Error(`Failed to fetch embeddings: ${response.value.statusText}`));
   }
 
