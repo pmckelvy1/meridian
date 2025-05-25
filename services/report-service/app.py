@@ -83,6 +83,11 @@ def get_events_for_cycle(cycle_start: datetime, cycle_end: datetime) -> Tuple[Li
     
     return sources, cycle_events
 
+def get_events_for_date(date: datetime) -> Tuple[List[Any], List[Any]]:
+    """Get events that occurred on the specified date."""
+    sources, events = get_events(date=date.isoformat())
+    return sources, events
+
 @app.route('/api/generate-report', methods=['GET'])
 def generate_report():
     """Generate a complete report from events for a given datetime"""
@@ -91,39 +96,41 @@ def generate_report():
         return jsonify({"error": "Date parameter is required"}), 400
     
     try:
-        # Parse the datetime
-        dt = datetime.fromisoformat(date_str)
+        # Parse the date (without time)
+        dt = datetime.strptime(date_str, "%Y-%m-%d").date()
         print(f"Generating report for {dt}")
         
         # Get cycle duration from query parameter, default to 8 hours
-        cycle_duration = request.args.get('cycle_duration', default=DEFAULT_CYCLE_DURATION, type=int)
+        # cycle_duration = request.args.get('cycle_duration', default=DEFAULT_CYCLE_DURATION, type=int)
         
-        # Get cycle boundaries
-        cycle_start, cycle_end = get_cycle_boundaries(dt, cycle_duration)
-        # Check if a report already exists for this cycle
-        response = requests.get(
-            f"https://meridian-production.pmckelvy1.workers.dev/reports/cycle",
-            params={
-                "cycle_start": cycle_start.isoformat(),
-                "cycle_end": cycle_end.isoformat()
-            },
-            headers={"Authorization": f"Bearer {os.environ.get('MERIDIAN_SECRET_KEY')}"}
-        )
+        # # Get cycle boundaries
+        # cycle_start, cycle_end = get_cycle_boundaries(dt, cycle_duration)
+        # # Check if a report already exists for this cycle
+        # # Add this back later with the /cycle endpoint
+        # response = requests.get(
+        #     f"https://meridian-production.pmckelvy1.workers.dev/reports/cycle",
+        #     params={
+        #         "cycle_start": cycle_start.isoformat(),
+        #         "cycle_end": cycle_end.isoformat()
+        #     },
+        #     headers={"Authorization": f"Bearer {os.environ.get('MERIDIAN_SECRET_KEY')}"}
+        # )
         
-        if response.status_code == 200:
-            return jsonify(response.json())
+        # if response.status_code == 200:
+        #     return jsonify(response.json())
         
         # Step 1: Fetch and process events for this cycle
-        sources, events = get_events_for_cycle(cycle_start, cycle_end)
+        # sources, events = get_events_for_cycle(cycle_start, cycle_end)
+        sources, events = get_events_for_date(dt)
         
         # Check if there are any events
         print(f"Found {len(events)} events for the specified time period")
-        if not events:
-            return jsonify({
-                "error": "No events found for the specified time period",
-                "cycle_start": cycle_start.isoformat(),
-                "cycle_end": cycle_end.isoformat()
-            }), 404
+        # if not events:
+        #     return jsonify({
+        #         "error": "No events found for the specified time period",
+        #         "cycle_start": cycle_start.isoformat(),
+        #         "cycle_end": cycle_end.isoformat()
+        #     }), 404
 
         # Process events into DataFrame
         articles_df = pd.DataFrame([{
