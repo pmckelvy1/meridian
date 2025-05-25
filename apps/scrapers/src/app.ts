@@ -88,7 +88,6 @@ const app = new Hono<HonoEnv>()
       }
     }
 
-    console.log('db url', c.env.DATABASE_URL);
     const db = getDb(c.env.DATABASE_URL);
 
     const allSources = await db.select({ id: $sources.id, name: $sources.name }).from($sources);
