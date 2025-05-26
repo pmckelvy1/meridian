@@ -80,7 +80,7 @@ const route = new Hono<HonoEnv>()
 
       const { cycle_start, cycle_end } = getCycleBoundaries(dt);
 
-      const report = await getDb(c.env.DATABASE_URL).query.$reports.findFirst({
+      const report = await getDb(c.env.HYPERDRIVE).query.$reports.findFirst({
         where: and(eq($reports.cycle_start, cycle_start), eq($reports.cycle_end, cycle_end)),
       });
 
@@ -116,7 +116,7 @@ const route = new Hono<HonoEnv>()
         return c.json({ error: 'Invalid date format' }, 400);
       }
 
-      const report = await getDb(c.env.DATABASE_URL).query.$reports.findFirst({
+      const report = await getDb(c.env.HYPERDRIVE).query.$reports.findFirst({
         where: and(eq($reports.cycle_start, startDate), eq($reports.cycle_end, endDate)),
       });
 
@@ -144,8 +144,6 @@ const route = new Hono<HonoEnv>()
         tldr: z.string(),
         createdAt: z.coerce.date(),
         model_author: z.string(),
-        cycle_start: z.coerce.date(),
-        cycle_end: z.coerce.date(),
         clustering_params: z.object({
           umap: z.object({
             n_neighbors: z.number(),
