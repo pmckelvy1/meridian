@@ -68,7 +68,6 @@ def get_events(date: str = None, start_date: str = None, end_date: str = None):
         params=params,
         headers={"Authorization": f"Bearer {os.environ.get('API_TOKEN')}"},
     )
-    print(f"Response: {response.content}")
     data = response.json()
     sources = [Source(**source) for source in data["sources"]]
     events = [Event(**event) for event in data["events"]]
