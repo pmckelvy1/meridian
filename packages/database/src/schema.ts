@@ -89,9 +89,6 @@ export const $reports = pgTable('reports', {
 
   model_author: text('model_author'),
 
-  cycle_start: timestamp('cycle_start', { mode: 'date' }),
-  cycle_end: timestamp('cycle_end', { mode: 'date' }),
-
   createdAt: timestamp('created_at', { mode: 'date' })
     .default(sql`CURRENT_TIMESTAMP`)
     .notNull(),
