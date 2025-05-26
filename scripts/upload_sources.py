@@ -11,6 +11,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+
 def upload_source(worker_url: str, source: Dict) -> bool:
     """Upload a single source to the worker."""
     try:
@@ -29,6 +30,7 @@ def upload_source(worker_url: str, source: Dict) -> bool:
         print(f"Error uploading source {source['name']}: {str(e)}")
         return False
 
+
 def load_sources_from_csv(csv_path: str) -> List[Dict]:
     """Load sources from CSV file and convert to source objects."""
     sources = []
@@ -45,20 +47,23 @@ def load_sources_from_csv(csv_path: str) -> List[Dict]:
             sources.append(source)
     return sources
 
+
 def main():
     # Get worker URL from environment variable or use default
     worker_url = "https://meridian-backend-production.pmckelvy1.workers.dev"
-    
+
     # Load sources from CSV file
     sources = load_sources_from_csv('sources.csv')
-    
+
     # Upload each source
     success_count = 0
     for source in sources:
         if upload_source(worker_url, source):
             success_count += 1
-    
-    print(f"\nUpload complete: {success_count}/{len(sources)} sources uploaded successfully")
+
+    print(
+        f"\nUpload complete: {success_count}/{len(sources)} sources uploaded successfully")
+
 
 if __name__ == "__main__":
-    main() 
+    main()
