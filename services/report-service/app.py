@@ -139,20 +139,22 @@ def generate_report():
             "url": event.url,
             "title": event.title,
             "publishDate": event.publishDate,
-            "content": event.content,
-            "location": event.location,
-            "relevance": event.relevance,
+            "contentFileKey": event.contentFileKey,
+            "primary_location": event.primary_location,
             "completeness": event.completeness,
-            "summary": event.summary
+            "content_quality": event.content_quality,
+            "event_summary_points": event.event_summary_points,
+            "thematic_keywords": event.thematic_keywords,
+            "topic_tags": event.topic_tags,
+            "key_entities": event.key_entities,
+            "content_focus": event.content_focus,
+            "embedding": event.embedding
         } for event in events])
         
         # Clean up summaries
         articles_df["summary"] = (
-            articles_df["summary"]
-            .str.split("EVENT:")
-            .str[1]
-            .str.split("CONTEXT:")
-            .str[0]
+            articles_df["event_summary_points"]
+            .apply(lambda x: " ".join(x) if x else "")
             .str.strip()
         )
         articles_df["text_to_embed"] = "query: " + articles_df["summary"]
@@ -296,14 +298,12 @@ def generate_report():
             "tldr": tldr_response[0],
             "model_author": "gemini-2.5-pro-preview-03-25",
             "createdAt": datetime.now().isoformat(),
-            "cycle_start": cycle_start.isoformat(),
-            "cycle_end": cycle_end.isoformat(),
             "clustering_params": CLUSTERING_PARAMS
         }
         
         # Publish report
         response = requests.post(
-            "https://meridian-production.pmckelvy1.workers.dev/reports/report",
+            "https://meridian-backend-production.pmckelvy1.workers.dev/reports/report",
             json=report,
             headers={"Authorization": f"Bearer {os.environ.get('MERIDIAN_SECRET_KEY')}"}
         )
