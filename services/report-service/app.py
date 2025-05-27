@@ -305,7 +305,7 @@ def generate_report():
         response = requests.post(
             "https://meridian-backend-production.pmckelvy1.workers.dev/reports/report",
             json=report,
-            headers={"Authorization": f"Bearer {os.environ.get('MERIDIAN_SECRET_KEY')}"}
+            headers={"Authorization": f"Bearer {os.environ.get('API_TOKEN')}"}
         )
         
         return jsonify({
