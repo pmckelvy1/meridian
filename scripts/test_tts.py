@@ -13,7 +13,7 @@ console = Console()
 
 def test_tts(
     text: str,
-    base_url: str = "http://localhost:5000",
+    base_url: str = "http://ml.notawebsite.net:5000",
     voice_id: Optional[str] = None,
     filename: Optional[str] = None,
     open_browser: bool = False
@@ -109,7 +109,7 @@ def fetch_last_report(base_url: str, api_token: str):
 def main():
     parser = argparse.ArgumentParser(description="Test the TTS endpoint")
     parser.add_argument("--text", help="Text to convert to speech")
-    parser.add_argument("--url", default="http://localhost:5000", help="Base URL of the API")
+    parser.add_argument("--url", default="http://ml.notawebsite.net:5000", help="Base URL of the API")
     parser.add_argument("--voice", help="Voice ID to use")
     parser.add_argument("--filename", help="Filename for the audio file")
     parser.add_argument("--open", action="store_true", help="Open the audio URL in browser")
