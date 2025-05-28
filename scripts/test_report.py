@@ -1,8 +1,8 @@
 import datetime
 import requests
 
-# URL = "ml.notawebsite.net"
-URL = "localhost"
+URL = "ml.notawebsite.net"
+# URL = "localhost"
 
 # current date without milliseconds
 date = datetime.datetime.now().strftime("%Y-%m-%d")

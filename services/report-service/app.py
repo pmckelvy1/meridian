@@ -20,9 +20,12 @@ from pydantic import BaseModel, Field
 import requests
 import uuid
 import boto3
-from elevenlabs.client import ElevenLabs
 from src.helpers import process_story, get_brief_prompt, get_title_prompt, get_tldr_prompt, brief_system_prompt, average_pool
 import pytz
+import nltk
+from nltk.tokenize import sent_tokenize
+import asyncio
+from google.cloud import texttospeech_v1
 
 load_dotenv()
 
@@ -50,39 +53,62 @@ CYCLE_BREAKS = [6, 14, 22]  # 6am, 2pm, 10pm EST
 DEFAULT_CYCLE_DURATION = 8
 
 # TTS Functions
-def generate_speech(text: str, voice_id: Optional[str] = None) -> bytes:
+def chunk_text_by_sentences(text: str, max_chars: int = 5000) -> list:
     """
-    Generate speech from text using ElevenLabs API.
-    
+    Split text into chunks of <= max_chars, breaking at sentence boundaries.
+    """
+    sentences = sent_tokenize(text)
+    chunks = []
+    current_chunk = ''
+    for sentence in sentences:
+        if len(current_chunk) + len(sentence) + 1 > max_chars:
+            if current_chunk:
+                chunks.append(current_chunk.strip())
+            current_chunk = sentence
+        else:
+            if current_chunk:
+                current_chunk += ' '
+            current_chunk += sentence
+    if current_chunk:
+        chunks.append(current_chunk.strip())
+    return chunks
+
+async def generate_speech_google(text: str, voice_id: Optional[str] = None, language_code: Optional[str] = None) -> bytes:
+    """
+    Generate speech from text using Google Cloud Text-to-Speech API.
+    Handles chunking if text exceeds 5000 characters.
     Args:
         text: The text to convert to speech
-        voice_id: Optional voice ID to use. If not provided, uses default voice.
-    
+        voice_id: Optional voice name (e.g., 'en-US-Wavenet-D').
+        language_code: Optional language code (e.g., 'en-US').
     Returns:
-        bytes: The generated audio data
+        bytes: The generated audio data (MP3)
     """
-    elevenlabs_api_key = os.getenv("ELEVENLABS_API_KEY")
-    if not elevenlabs_api_key:
-        raise ValueError("ElevenLabs API key not configured")
+    client = texttospeech_v1.TextToSpeechAsyncClient()
+    # Defaults
+    if not language_code:
+        language_code = "en-US"
+    if not voice_id:
+        voice_id = "en-US-Wavenet-D"
     
-    client = ElevenLabs(api_key=elevenlabs_api_key)
-    
-    # Use default voice if none specified
-    voice = voice_id if voice_id else "JBFqnCBsd6RMkjVDRZzb"
-    
-    audio = client.text_to_speech.convert(
-        text=text,
-        voice_id=voice,
-        model_id="eleven_multilingual_v2",
-        output_format="mp3_44100_128",
-    )
-
-    # Collect all chunks into a single bytes object
+    text_chunks = chunk_text_by_sentences(text, max_chars=5000)
     audio_data = b""
-    for chunk in audio:
-        if chunk:
-            audio_data += chunk
-            
+    for chunk in text_chunks:
+        synthesis_input = texttospeech_v1.SynthesisInput(text=chunk)
+        voice = texttospeech_v1.VoiceSelectionParams(
+            language_code=language_code,
+            name=voice_id
+        )
+        audio_config = texttospeech_v1.AudioConfig(
+            audio_encoding=texttospeech_v1.AudioEncoding.MP3
+        )
+        request = texttospeech_v1.SynthesizeSpeechRequest(
+            input=synthesis_input,
+            voice=voice,
+            audio_config=audio_config
+        )
+        response = await client.synthesize_speech(request=request)
+        audio_data += response.audio_content
     return audio_data
 
 def upload_to_r2(audio_data: bytes, filename: Optional[str] = None) -> str:
@@ -407,32 +433,30 @@ def generate_report():
 @app.route('/api/tts', methods=['POST'])
 def text_to_speech():
     """
-    Converts text to speech using ElevenLabs API and stores the audio in Cloudflare R2.
+    Converts text to speech using Google Cloud TTS and stores the audio in Cloudflare R2.
     """
     try:
         data = request.get_json()
         if not data or 'text' not in data:
             return jsonify({"error": "Text field is required"}), 400
-            
         text = data['text']
         voice_id = data.get('voice_id')
+        language_code = data.get('language_code')
         filename = data.get('filename')
-        
-        # Generate speech
-        audio_data = generate_speech(
+
+        # Generate speech (run async in sync context)
+        audio_data = asyncio.run(generate_speech_google(
             text=text,
-            voice_id=voice_id
-        )
-        
+            voice_id=voice_id,
+            language_code=language_code
+        ))
+
         # Upload to R2
         audio_url = upload_to_r2(
             audio_data=audio_data,
             filename=filename
         )
-        
-        # Extract filename from URL
         filename = audio_url.split("/")[-1]
-        
         return jsonify({
             "audio_url": audio_url,
             "filename": filename
