@@ -114,7 +114,11 @@ def main():
     parser.add_argument("--filename", help="Filename for the audio file")
     parser.add_argument("--open", action="store_true", help="Open the audio URL in browser")
     parser.add_argument("--token", help="API token for authorization (defaults to .dev.vars value if available)")
+    parser.add_argument("--local", action="store_true", help="Use localhost as the base URL (overrides --url)")
     args = parser.parse_args()
+
+    if args.local:
+        args.url = "http://localhost:5000"
 
     api_token = args.token
     if not api_token:

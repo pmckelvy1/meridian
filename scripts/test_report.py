@@ -1,7 +1,12 @@
 import datetime
 import requests
+import argparse
 
-URL = "ml.notawebsite.net"
+parser = argparse.ArgumentParser(description="Generate test report.")
+parser.add_argument('--local', action='store_true', help='Use localhost as the URL')
+args = parser.parse_args()
+
+URL = "localhost" if args.local else "ml.notawebsite.net"
 # URL = "localhost"
 
 # current date without milliseconds

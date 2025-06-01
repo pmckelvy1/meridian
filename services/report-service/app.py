@@ -440,13 +440,15 @@ def text_to_speech():
         if not data or 'text' not in data:
             return jsonify({"error": "Text field is required"}), 400
         text = data['text']
+        tts_text = text.replace("*", "")
+        tts_text = text.replace("#", "")
         voice_id = data.get('voice_id')
         language_code = data.get('language_code')
         filename = data.get('filename')
 
         # Generate speech (run async in sync context)
         audio_data = asyncio.run(generate_speech_google(
-            text=text,
+            text=tts_text,
             voice_id=voice_id,
             language_code=language_code
         ))
