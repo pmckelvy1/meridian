@@ -8,15 +8,14 @@ import argparse
 from rich.console import Console
 from rich.panel import Panel
 from rich import print as rprint
+from dotenv import load_dotenv
+import os
 
 console = Console()
 
 def test_tts(
     text: str,
-    base_url: str = "http://ml.notawebsite.net:5000",
-    voice_id: Optional[str] = None,
-    filename: Optional[str] = None,
-    open_browser: bool = False
+    base_url: str = "http://ml.notawebsite.net:5000"
 ) -> Dict[str, Any]:
     """
     Test the TTS endpoint with the given parameters.
@@ -26,17 +25,12 @@ def test_tts(
         base_url: The base URL of the API
         voice_id: Optional voice ID to use
         filename: Optional filename for the audio file
-        open_browser: Whether to open the audio URL in browser
     
     Returns:
         Dict containing the response from the API
     """
     # Prepare the request payload
     payload = {"text": text}
-    if voice_id:
-        payload["voice_id"] = voice_id
-    if filename:
-        payload["filename"] = filename
     
     # Make the request
     try:
@@ -57,10 +51,6 @@ def test_tts(
             title="TTS Response"
         ))
         
-        # Open the audio URL in browser if requested
-        if open_browser and result.get('audio_url'):
-            webbrowser.open(result['audio_url'])
-        
         return result
         
     except requests.exceptions.RequestException as e:
@@ -79,13 +69,13 @@ def test_tts(
                 console.print(e.response.text)
         return None
 
-def fetch_last_report(base_url: str, api_token: str):
+def fetch_last_report(api_token: str):
     """
     Fetch the latest report from the /last-report endpoint.
     """
     try:
         response = requests.get(
-            f"https://meridian-backend-production.pmckelvy1.workers.dev/reports/last-report",
+            "https://meridian-backend-production.pmckelvy1.workers.dev/reports/last-report",
             headers={"Authorization": f"Bearer {api_token}"}
         )
         response.raise_for_status()
@@ -108,52 +98,28 @@ def fetch_last_report(base_url: str, api_token: str):
 
 def main():
     parser = argparse.ArgumentParser(description="Test the TTS endpoint")
-    parser.add_argument("--text", help="Text to convert to speech")
-    parser.add_argument("--url", default="http://ml.notawebsite.net:5000", help="Base URL of the API")
-    parser.add_argument("--voice", help="Voice ID to use")
-    parser.add_argument("--filename", help="Filename for the audio file")
-    parser.add_argument("--open", action="store_true", help="Open the audio URL in browser")
-    parser.add_argument("--token", help="API token for authorization (defaults to .dev.vars value if available)")
-    parser.add_argument("--local", action="store_true", help="Use localhost as the base URL (overrides --url)")
+    parser.add_argument("--local", action="store_true", help="Use localhost as the base URL (overrides remote)")
     args = parser.parse_args()
 
-    if args.local:
-        args.url = "http://localhost:5000"
-
-    api_token = args.token
+    # Load API token from .env using python-dotenv
+    load_dotenv()
+    api_token = os.getenv("API_TOKEN")
     if not api_token:
-        # Try to load from .dev.vars
-        import os
-        dev_vars_path = os.path.join(os.path.dirname(__file__), "..", "apps", "backend", ".dev.vars")
-        try:
-            with open(dev_vars_path) as f:
-                for line in f:
-                    if line.startswith("API_TOKEN="):
-                        api_token = line.strip().split("=", 1)[1]
-                        break
-        except Exception:
-            pass
-    if not api_token:
-        console.print(Panel("[red]API token is required. Provide with --token or in .dev.vars[/red]", title="Missing Token"))
+        console.print(Panel("[red]API token is required. Provide API_TOKEN in .env[/red]", title="Missing Token"))
         return
 
-    # If no text provided, fetch last report and use its content
-    if args.text:
-        text = args.text
-    else:
-        report = fetch_last_report(args.url, api_token)
-        if not report or 'content' not in report:
-            console.print(Panel("[red]Failed to fetch report or missing 'content' field.[/red]", title="No Report Content"))
-            return
-        text = report['content']
+    # Always fetch last report and use its content
+    base_url = "http://localhost:5000" if args.local else "http://ml.notawebsite.net:5000"
+    report = fetch_last_report(api_token)
+    if not report or 'content' not in report:
+        console.print(Panel("[red]Failed to fetch report or missing 'content' field.[/red]", title="No Report Content"))
+        return
+    text = report['content']
 
     # Run the test
     test_tts(
         text=text,
-        base_url=args.url,
-        voice_id=args.voice,
-        filename=args.filename,
-        open_browser=args.open
+        base_url=base_url
     )
 
 if __name__ == "__main__":
