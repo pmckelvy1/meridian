@@ -27,3 +27,4 @@ dotenv
 boto3==1.34.34
 nltk
 google-cloud-texttospeech
+google-cloud-storage

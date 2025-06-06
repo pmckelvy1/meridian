@@ -26,6 +26,9 @@ import nltk
 from nltk.tokenize import sent_tokenize
 import asyncio
 from google.cloud import texttospeech_v1
+from google.cloud import texttospeech
+import time
+from google.cloud import storage
 
 load_dotenv()
 
@@ -109,6 +112,77 @@ async def generate_speech_google(text: str, voice_id: Optional[str] = None, lang
         )
         response = await client.synthesize_speech(request=request)
         audio_data += response.audio_content
+    return audio_data
+
+async def generate_speech_google_long(text: str, voice_id: Optional[str] = None, language_code: Optional[str] = None) -> bytes:
+    """
+    Generate speech from text using Google Cloud Text-to-Speech Long Audio Synthesis API.
+    Args:
+        text: The text to convert to speech
+        voice_id: Optional voice name (e.g., 'en-US-Wavenet-D').
+        language_code: Optional language code (e.g., 'en-US').
+    Returns:
+        bytes: The generated audio data (MP3)
+    """
+    client = texttospeech.TextToSpeechLongAudioSynthesizeClient()
+    
+    # Defaults
+    if not language_code:
+        language_code = "en-us"
+    if not voice_id:
+        voice_id = "en-us-Chirp3-HD-Leda"
+    
+    # Get project ID from environment
+    project_id = os.getenv("GOOGLE_CLOUD_PROJECT")
+    if not project_id:
+        raise ValueError("GOOGLE_CLOUD_PROJECT environment variable is required")
+    
+    # Generate a unique filename for the output
+    output_filename = f"tts_output_{uuid.uuid4()}.wav"
+    output_gcs_uri = f"gs://{os.getenv('GOOGLE_CLOUD_BUCKET')}/{output_filename}"
+    
+    # Create the synthesis request
+    synthesis_input = texttospeech.SynthesisInput(text=text)
+    voice = texttospeech.VoiceSelectionParams(
+        language_code=language_code,
+        name=voice_id
+    )
+    audio_config = texttospeech.AudioConfig(
+        audio_encoding=texttospeech.AudioEncoding.LINEAR16
+    )
+    
+    # Create the long audio synthesis request
+    request = texttospeech.SynthesizeLongAudioRequest(
+        parent=f"projects/{project_id}/locations/global",
+        input=synthesis_input,
+        audio_config=audio_config,
+        voice=voice,
+        output_gcs_uri=output_gcs_uri
+    )
+    
+    # Start the synthesis operation
+    print('sending request')
+    operation = client.synthesize_long_audio(request=request)
+    print('req sent')
+    # Wait for the operation to complete
+    while not operation.done():
+        time.sleep(5)  # Poll every 5 seconds
+    
+    # Get the result
+    # result = operation.result()
+    print('result')
+    
+    # Download the audio file from GCS
+    storage_client = storage.Client()
+    bucket = storage_client.bucket(os.getenv('GOOGLE_CLOUD_BUCKET'))
+    blob = bucket.blob(output_filename)
+    
+    # Read the audio data
+    audio_data = blob.download_as_bytes()
+    
+    # Clean up the temporary file
+    blob.delete()
+    
     return audio_data
 
 def upload_to_r2(audio_data: bytes, filename: Optional[str] = None) -> str:
@@ -434,20 +508,22 @@ def generate_report():
 def text_to_speech():
     """
     Converts text to speech using Google Cloud TTS and stores the audio in Cloudflare R2.
+    Uses Long Audio Synthesis for better handling of longer texts.
     """
     try:
         data = request.get_json()
         if not data or 'text' not in data:
             return jsonify({"error": "Text field is required"}), 400
-        text = data['text']
-        tts_text = text.replace("*", "")
-        tts_text = text.replace("#", "")
+        
+        tts_text = data['text']
+        tts_text = tts_text.replace("*", "")
+        tts_text = tts_text.replace("#", "")
         voice_id = data.get('voice_id')
         language_code = data.get('language_code')
-        filename = data.get('filename')
+        filename = "intel-report-" + datetime.now().strftime("%Y-%m-%d") + ".wav"
 
-        # Generate speech (run async in sync context)
-        audio_data = asyncio.run(generate_speech_google(
+        # Generate speech using long audio synthesis
+        audio_data = asyncio.run(generate_speech_google_long(
             text=tts_text,
             voice_id=voice_id,
             language_code=language_code
